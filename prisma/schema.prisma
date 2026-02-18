@@ -1,0 +1,183 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String       @id @default(cuid())
+  displayName   String       @unique
+  createdAt     DateTime     @default(now())
+  email         String?      @unique
+  emailVerified DateTime?
+  image         String?
+  name          String?
+  updatedAt     DateTime     @updatedAt
+  accounts      Account[]
+  auditLogs     AuditLog[]   @relation("AuditActor")
+  predictions   Prediction[]
+  memberships   RoomMember[]
+  sessions      Session[]
+  ownedRooms    Room[]       @relation("RoomOwner")
+}
+
+enum RoomRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum RoomAccessType {
+  OPEN
+  CLOSED
+}
+
+enum MembershipStatus {
+  PENDING
+  ACTIVE
+}
+
+model Room {
+  id         String         @id @default(cuid())
+  code       String         @unique
+  name       String
+  editPolicy RoomEditPolicy @default(STRICT_PER_MATCH)
+  createdAt  DateTime       @default(now())
+  accessType RoomAccessType @default(OPEN)
+
+  ownerId String?
+  owner   User?   @relation("RoomOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  members     RoomMember[]
+  predictions Prediction[]
+  auditLogs   AuditLog[]
+
+  @@index([ownerId])
+}
+
+model RoomMember {
+  id               String   @id @default(cuid())
+  roomId           String
+  userId           String
+  contributionText String   @default("")
+  joinedAt         DateTime @default(now())
+  room             Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role             RoomRole @default(MEMBER)
+  status MembershipStatus   @default(PENDING)
+
+
+  @@unique([roomId, userId])
+  @@index([roomId])
+  @@index([userId])
+}
+
+model Match {
+  id                 String       @id @default(cuid())
+  fifaId             String?      @unique
+  stage              String
+  group              String?
+  kickoffAt          DateTime
+  homeTeam           String
+  awayTeam           String
+  homeGoals          Int?
+  awayGoals          Int?
+  decidedByPenalties Boolean      @default(false)
+  penWinner          String?
+  createdAt          DateTime     @default(now())
+  city               String
+  matchday           Int
+  predictions        Prediction[]
+
+  @@index([kickoffAt])
+  @@index([stage])
+}
+
+model Prediction {
+  id            String     @id @default(cuid())
+  roomId        String
+  userId        String
+  matchId       String
+  predHomeGoals Int
+  predAwayGoals Int
+  predPenWinner String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  auditLogs     AuditLog[]
+  match         Match      @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  room          Room       @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId, matchId])
+  @@index([roomId])
+  @@index([matchId])
+  @@index([userId])
+}
+
+model AuditLog {
+  id           String      @id @default(cuid())
+  action       AuditAction
+  createdAt    DateTime    @default(now())
+  roomId       String
+  actorUserId  String
+  predictionId String?
+  beforeJson   Json?
+  afterJson    Json?
+  actor        User        @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: Cascade)
+  prediction   Prediction? @relation(fields: [predictionId], references: [id])
+  room         Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+  @@index([actorUserId])
+  @@index([predictionId])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum RoomEditPolicy {
+  STRICT_PER_MATCH
+  ALLOW_UNTIL_ROUND_CLOSE
+}
+
+enum AuditAction {
+  PREDICTION_CREATED
+  PREDICTION_UPDATED
+  PREDICTION_LOCKED_ATTEMPT
+  ROOM_CREATED
+  ROOM_JOINED
+}
