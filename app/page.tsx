@@ -8,7 +8,7 @@ export default async function Home() {
 
   const recentRooms = me
     ? await prisma.room.findMany({
-        where: { members: { some: { userId: me.id } } },
+        where: { members: { some: { userId: me.id, status: "ACTIVE"}} },
         orderBy: { createdAt: "desc" },
         select: { id: true, name: true, code: true, editPolicy: true },
         take: 5,

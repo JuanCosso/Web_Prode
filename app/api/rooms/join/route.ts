@@ -1,3 +1,4 @@
+// app/api/rooms/join/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
 import { getOrCreateUser } from "@/src/lib/user";
@@ -6,6 +7,10 @@ import { MembershipStatus } from "@prisma/client";
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const code = body?.code as string | undefined;
+  // ✅ Leer contributionText del body
+  const contributionText = typeof body?.contributionText === "string"
+    ? body.contributionText.trim()
+    : "";
 
   if (!code) {
     return NextResponse.json({ error: "CODE_REQUIRED" }, { status: 400 });
@@ -13,10 +18,7 @@ export async function POST(req: NextRequest) {
 
   const room = await prisma.room.findUnique({
     where: { code },
-    select: {
-      id: true,
-      accessType: true,
-    },
+    select: { id: true, accessType: true },
   });
 
   if (!room) {
@@ -26,16 +28,15 @@ export async function POST(req: NextRequest) {
   const me = await getOrCreateUser();
 
   const existing = await prisma.roomMember.findUnique({
-    where: {
-      roomId_userId: {
-        roomId: room.id,
-        userId: me.id,
-      },
-    },
+    where: { roomId_userId: { roomId: room.id, userId: me.id } },
+    select: { status: true },
   });
 
   if (existing) {
-    return NextResponse.json({ error: "ALREADY_MEMBER" }, { status: 400 });
+    if (existing.status === MembershipStatus.REJECTED) {
+      return NextResponse.json({ error: "REQUEST_REJECTED" }, { status: 403 });
+    }
+    return NextResponse.json({ ok: true, roomId: room.id, status: existing.status });
   }
 
   const status =
@@ -48,8 +49,9 @@ export async function POST(req: NextRequest) {
       roomId: room.id,
       userId: me.id,
       status,
+      contributionText, // ✅ guardado
     },
   });
 
-  return NextResponse.json({ ok: true, status });
+  return NextResponse.json({ ok: true, roomId: room.id, status });
 }

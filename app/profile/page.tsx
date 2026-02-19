@@ -8,7 +8,14 @@ export default async function ProfilePage() {
   const me = await getOrCreateUser();
 
   const rooms = await prisma.room.findMany({
-    where: { members: { some: { userId: me.id } } },
+    where: {
+      members: {
+        some: {
+          userId: me.id,
+          status: "ACTIVE",  // ← solo salas donde sos miembro activo
+        },
+      },
+    },
     orderBy: { createdAt: "desc" },
     select: { id: true, name: true, code: true, editPolicy: true, createdAt: true },
     take: 50,

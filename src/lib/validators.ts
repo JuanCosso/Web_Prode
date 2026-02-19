@@ -3,12 +3,12 @@ import { z } from "zod";
 export const CreateRoomSchema = z.object({
   name: z.string().trim().min(3).max(40),
   editPolicy: z.enum(["STRICT_PER_MATCH", "ALLOW_UNTIL_ROUND_CLOSE"]).optional(),
+  accessType: z.enum(["OPEN", "CLOSED"]).optional(), // ← nuevo
   contributionText: z.string().trim().max(80).optional(),
 });
 
 export const JoinRoomSchema = z.object({
   code: z.string().trim().min(4).max(12),
-  // ✅ join NO toca nombre; solo aporte opcional
   contributionText: z.string().trim().max(80).optional(),
 });
 

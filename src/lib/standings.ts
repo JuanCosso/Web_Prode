@@ -1,23 +1,29 @@
+// src/lib/standings.ts
 import { prisma } from "@/src/lib/prisma";
 import { scorePrediction } from "@/src/lib/scoring";
+import { MembershipStatus } from "@prisma/client";
 
 export type StandingRow = {
   userId: string;
   displayName: string;
   contributionText: string;
-
   points: number;
-  exactHits: number; // desempate principal (cantidad de 3pts)
+  exactHits: number;
   outcomeHits: number;
-
   predictedCount: number;
-  scoredCount: number; // partidos con resultado real y con predicción
+  scoredCount: number;
 };
 
 export async function computeStandings(roomId: string): Promise<StandingRow[]> {
   const room = await prisma.room.findUnique({
     where: { id: roomId },
-    include: { members: { include: { user: true } } },
+    include: {
+      members: {
+        // ✅ Solo miembros ACTIVOS — los PENDING no aparecen en ningún lado
+        where: { status: MembershipStatus.ACTIVE },
+        include: { user: true },
+      },
+    },
   });
   if (!room) return [];
 
@@ -62,7 +68,6 @@ export async function computeStandings(roomId: string): Promise<StandingRow[]> {
     }
   }
 
-  // Orden con desempate: puntos desc, exactHits desc, outcomeHits desc, displayName asc
   rows.sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points;
     if (b.exactHits !== a.exactHits) return b.exactHits - a.exactHits;

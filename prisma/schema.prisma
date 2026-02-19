@@ -38,6 +38,7 @@ enum RoomAccessType {
 enum MembershipStatus {
   PENDING
   ACTIVE
+  REJECTED
 }
 
 model Room {
