@@ -1,3 +1,4 @@
+// app/room/[roomId]/page.tsx
 import Link from "next/link";
 import { prisma } from "@/src/lib/prisma";
 import { computeStandings } from "@/src/lib/standings";
@@ -27,14 +28,9 @@ export default async function RoomPage({
       <main className="min-h-screen bg-slate-950 text-white">
         <div className="mx-auto max-w-3xl px-4 py-10">
           <h1 className="text-2xl font-semibold">Sala</h1>
-          <p className="mt-2 text-white/70">
-            No se pudo identificar el usuario.
-          </p>
+          <p className="mt-2 text-white/70">No se pudo identificar el usuario.</p>
           <div className="mt-6">
-            <Link
-              className="rounded-xl border border-white/20 px-4 py-2"
-              href="/"
-            >
+            <Link className="rounded-xl border border-white/20 px-4 py-2" href="/">
               Volver
             </Link>
           </div>
@@ -47,17 +43,13 @@ export default async function RoomPage({
     where: { id: roomId },
     include: {
       members: {
-        include: {
-          user: { select: { id: true, displayName: true } },
-        },
+        include: { user: { select: { id: true, displayName: true } } },
         orderBy: { joinedAt: "asc" },
       },
     },
   });
 
-  if (!room) {
-    return <div className="p-6">Room no encontrada</div>;
-  }
+  if (!room) return <div className="p-6">Room no encontrada</div>;
 
   const myMember = room.members.find((m) => m.userId === me.id);
 
@@ -66,44 +58,24 @@ export default async function RoomPage({
       <main className="min-h-screen bg-slate-950 text-white">
         <div className="mx-auto max-w-3xl px-4 py-10">
           <h1 className="text-2xl font-semibold">{room.name}</h1>
-          <p className="mt-2 text-white/70">
-            No sos miembro de esta sala. Unite con el código.
-          </p>
+          <p className="mt-2 text-white/70">No sos miembro de esta sala. Unite con el código.</p>
           <div className="mt-6 flex gap-2">
-            <Link
-              className="rounded-xl border border-white/20 px-4 py-2"
-              href="/join"
-            >
-              Ir a Unirse
-            </Link>
-            <Link
-              className="rounded-xl border border-white/20 px-4 py-2"
-              href="/"
-            >
-              Inicio
-            </Link>
+            <Link className="rounded-xl border border-white/20 px-4 py-2" href="/join">Ir a Unirse</Link>
+            <Link className="rounded-xl border border-white/20 px-4 py-2" href="/">Inicio</Link>
           </div>
         </div>
       </main>
     );
   }
 
-  // 🚫 Si está pendiente, no puede entrar
   if (myMember.status === MembershipStatus.PENDING) {
     return (
       <main className="min-h-screen bg-slate-950 text-white">
         <div className="mx-auto max-w-3xl px-4 py-10">
           <h1 className="text-2xl font-semibold">{room.name}</h1>
-          <p className="mt-2 text-yellow-400">
-            Tu solicitud está pendiente de aprobación.
-          </p>
+          <p className="mt-2 text-yellow-400">Tu solicitud está pendiente de aprobación.</p>
           <div className="mt-6">
-            <Link
-              className="rounded-xl border border-white/20 px-4 py-2"
-              href="/"
-            >
-              Volver al inicio
-            </Link>
+            <Link className="rounded-xl border border-white/20 px-4 py-2" href="/">Volver al inicio</Link>
           </div>
         </div>
       </main>
@@ -111,28 +83,20 @@ export default async function RoomPage({
   }
 
   const myRole = myMember.role;
-  const canKick =
-    myRole === RoomRole.OWNER || myRole === RoomRole.ADMIN;
+  const canKick = myRole === RoomRole.OWNER || myRole === RoomRole.ADMIN;
   const isOwner = myRole === RoomRole.OWNER;
   const canModerate = canKick;
 
-  // 🔥 Separar activos y pendientes
-  const activeMembers = room.members.filter(
-    (m) => m.status === MembershipStatus.ACTIVE
-  );
-
-  const pendingMembers = room.members.filter(
-    (m) => m.status === MembershipStatus.PENDING
-  );
-
+  const activeMembers = room.members.filter((m) => m.status === MembershipStatus.ACTIVE);
+  const pendingMembers = room.members.filter((m) => m.status === MembershipStatus.PENDING);
   const pendingCount = pendingMembers.length;
 
+  // ✅ Traemos TODOS los partidos de todas las fases, ordenados cronológicamente
   const matches = await prisma.match.findMany({
-    where: { stage: "GROUP" },
     orderBy: [
+      { kickoffAt: "asc" },
       { group: "asc" },
       { matchday: "asc" },
-      { kickoffAt: "asc" },
     ],
     select: {
       id: true,
@@ -142,16 +106,17 @@ export default async function RoomPage({
       kickoffAt: true,
       homeTeam: true,
       awayTeam: true,
+      homeGoals: true,
+      awayGoals: true,
+      decidedByPenalties: true,
+      penWinner: true,
     },
   });
 
   const standings = await computeStandings(roomId);
 
   const myPreds = await prisma.prediction.findMany({
-    where: {
-      roomId,
-      userId: me.id,
-    },
+    where: { roomId, userId: me.id },
     select: {
       matchId: true,
       predHomeGoals: true,
@@ -160,9 +125,7 @@ export default async function RoomPage({
     },
   });
 
-  const playedCount = matches.filter(
-    (m) => new Date() >= m.kickoffAt
-  ).length;
+  const playedCount = matches.filter((m) => new Date() >= m.kickoffAt).length;
 
   return (
     <RoomClient
@@ -173,10 +136,7 @@ export default async function RoomPage({
         editPolicy: room.editPolicy,
         accessType: room.accessType,
       }}
-      me={{
-        id: me.id,
-        displayName: me.displayName ?? "Invitado",
-      }}
+      me={{ id: me.id, displayName: me.displayName ?? "Invitado" }}
       members={activeMembers.map((m) => ({
         id: m.id,
         userId: m.userId,
