@@ -79,20 +79,12 @@ export function AuthButton() {
 
   if (data?.user) {
     return (
-      <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-        <div className="text-sm text-white/70">
-          Sesión:{" "}
-          <span className="text-white">
-            {data.user.email ?? data.user.name}
-          </span>
-        </div>
-        <button
-          onClick={() => signOut()}
-          className="rounded-xl border border-white/20 px-4 py-2 font-medium"
-        >
-          Cerrar sesión
-        </button>
-      </div>
+      <button
+        onClick={() => signOut()}
+        className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-medium backdrop-blur transition hover:border-white/30 hover:bg-white/15"
+      >
+        Cerrar sesión
+      </button>
     );
   }
 

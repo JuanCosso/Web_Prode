@@ -18,7 +18,7 @@ type Match = {
 };
 type MyPred = { matchId: string; predHomeGoals: number; predAwayGoals: number; predPenWinner: string | null };
 type StandingRow = { userId: string; displayName: string; points: number; exactHits: number; outcomeHits: number; contributionText?: string | null };
-type LivePred = { matchId: string; userId: string; displayName: string; h: number; a: number };
+type LivePred = { matchId: string; userId: string; displayName: string; h: number; a: number; penWinner?: string | null };
 
 // ── Fases ────────────────────────────────────────────────────────────────────
 const STAGE_ORDER = ["GROUP", "R32", "R16", "QF", "SF", "TPP", "FINAL"];
@@ -67,6 +67,110 @@ function Flag({ code, alt }: { code?: string; alt: string }) {
   );
 }
 
+// ── Scoring helpers ───────────────────────────────────────────────────────────
+function calcOutcome(h: number, a: number) {
+  if (h === a) return "D";
+  return h > a ? "H" : "A";
+}
+
+// Color aplicado a la pill del resultado
+function getPillColor(match: Match, predH: number | null, predA: number | null): string {
+  if (match.homeGoals === null || match.awayGoals === null) return "bg-white/10 text-white/70";
+  if (predH === null || predA === null) return "bg-white/10 text-white/70";
+  if (predH === match.homeGoals && predA === match.awayGoals)
+    return "bg-emerald-500/30 text-emerald-300 font-bold";
+  if (calcOutcome(predH, predA) === calcOutcome(match.homeGoals, match.awayGoals))
+    return "bg-yellow-500/30 text-yellow-300 font-bold";
+  return "bg-red-600/30 text-red-300 font-bold";
+}
+
+// ── Estadísticas comparativas (calculadas client-side) ────────────────────────
+type PlayerStats = {
+  userId: string;
+  displayName: string;
+  effectivenessScore: number; // pts / max_posibles * 100
+  exactRatio: number;         // exactos / jugados * 100
+  avgDistance: number;        // promedio |predH-realH|+|predA-realA|
+  homeEffectiveness: number;  // % aciertos cuando gana local
+  awayEffectiveness: number;  // % aciertos cuando gana visitante
+  avgPointsPerMatch: number;  // pts / partidos predichos
+  maxStreak: number;          // racha máxima sumando ≥1 punto
+  playedPreds: number;
+};
+
+function computePlayerStats(
+  members: Member[],
+  allPreds: Map<string, LivePred>,
+  matches: Match[],
+): PlayerStats[] {
+  const playedMatches = matches
+    .filter((m) => m.homeGoals !== null && m.awayGoals !== null)
+    .sort((a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime());
+  if (playedMatches.length === 0) return [];
+
+  return members.map((mb) => {
+    let pts = 0, maxPts = 0, exactHits = 0, totalDist = 0, distCount = 0;
+    let homeCorrect = 0, homeTotal = 0, awayCorrect = 0, awayTotal = 0;
+    let playedPreds = 0;
+    const streakBits: boolean[] = [];
+
+    for (const m of playedMatches) {
+      const pred = allPreds.get(`${m.id}__${mb.userId}`);
+      maxPts += 3;
+      if (!pred) { streakBits.push(false); continue; }
+      playedPreds++;
+
+      const exact = pred.h === m.homeGoals && pred.a === m.awayGoals;
+      const outcomeOk = calcOutcome(pred.h, pred.a) === calcOutcome(m.homeGoals!, m.awayGoals!);
+      if (exact) { pts += 3; exactHits++; }
+      else if (outcomeOk) { pts += 1; }
+      streakBits.push(exact || outcomeOk);
+
+      totalDist += Math.abs(pred.h - m.homeGoals!) + Math.abs(pred.a - m.awayGoals!);
+      distCount++;
+
+      // Local/visitante: según a quién apostó el jugador (no quién ganó en la realidad)
+      const predOutcome = calcOutcome(pred.h, pred.a);
+      const ptsThisMatch = exact ? 3 : outcomeOk ? 1 : 0;
+      if (predOutcome === "H") { homeTotal++; homeCorrect += ptsThisMatch; }
+      else if (predOutcome === "A") { awayTotal++; awayCorrect += ptsThisMatch; }
+    }
+
+    let maxStreak = 0, curStreak = 0;
+    for (const hit of streakBits) {
+      if (hit) { curStreak++; maxStreak = Math.max(maxStreak, curStreak); }
+      else curStreak = 0;
+    }
+
+    return {
+      userId: mb.userId,
+      displayName: mb.displayName,
+      effectivenessScore: maxPts > 0 ? Math.round((pts / maxPts) * 100) : 0,
+      exactRatio: playedPreds > 0 ? Math.round((exactHits / playedPreds) * 100) : 0,
+      avgDistance: distCount > 0 ? Math.round((totalDist / distCount) * 10) / 10 : 0,
+      // homeCorrect/awayCorrect ahora son puntos totales (max 3 por partido)
+      // los expresamos como % sobre el máximo posible (3 pts/partido)
+      homeEffectiveness: homeTotal > 0 ? Math.round((homeCorrect / (homeTotal * 3)) * 100) : 0,
+      awayEffectiveness: awayTotal > 0 ? Math.round((awayCorrect / (awayTotal * 3)) * 100) : 0,
+      avgPointsPerMatch: playedPreds > 0 ? Math.round((pts / playedPreds) * 100) / 100 : 0,
+      maxStreak,
+      playedPreds,
+    };
+  });
+}
+
+function Bar({ value, max = 100, color }: { value: number; max?: number; color: string }) {
+  const pct = Math.min(100, max > 0 ? Math.round((value / max) * 100) : 0);
+  return (
+    <div className="flex items-center gap-1.5 flex-1">
+      <div className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
+        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-[10px] text-white/60 w-7 text-right shrink-0">{value}%</span>
+    </div>
+  );
+}
+
 // ─── Modal de solicitudes pendientes ─────────────────────────────────────────
 function PendingModal({
   pending, roomId, onApproved, onRejected, onClose,
@@ -75,7 +179,6 @@ function PendingModal({
   onApproved: (m: Member) => void; onRejected: (id: string) => void; onClose: () => void;
 }) {
   const [busy, setBusy] = useState<string | null>(null);
-
   async function approve(memberId: string) {
     setBusy(memberId);
     const res = await fetch(`/api/rooms/${roomId}/members/${memberId}/approve`, { method: "PATCH" });
@@ -89,7 +192,6 @@ function PendingModal({
     setBusy(null);
     onRejected(memberId);
   }
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
@@ -129,7 +231,7 @@ export default function RoomClient({
   canKick, canModerate = false, isOwner = false,
   matches, myPreds,
   standings: initialStandings,
-  playedCount,
+  playedCount: _initialPlayedCount,
 }: {
   room: Room; me: Me;
   members: Member[];
@@ -146,19 +248,21 @@ export default function RoomClient({
   const [pendingMembers, setPendingMembers] = useState<PendingMember[]>(initialPending);
   const [showPendingModal, setShowPendingModal] = useState(false);
 
-  // ── Tabs de fase ──────────────────────────────────────────────────────────
-  const stagesPresent = useMemo(() =>
-    STAGE_ORDER.filter((s) => matches.some((m) => m.stage === s)),
+  // ── "Jugados" calculado client-side para reflejar resultados ya cargados ──
+  const playedCount = useMemo(
+    () => matches.filter((m) => m.homeGoals !== null && m.awayGoals !== null).length,
     [matches]
   );
+
+  // ── Tabs de fase ──────────────────────────────────────────────────────────
+  const stagesPresent = useMemo(() =>
+    STAGE_ORDER.filter((s) => matches.some((m) => m.stage === s)), [matches]);
   const [activeStage, setActiveStage] = useState(() => stagesPresent[0] ?? "GROUP");
 
   const stageMatches = useMemo(() =>
-    matches
-      .filter((m) => m.stage === activeStage)
+    matches.filter((m) => m.stage === activeStage)
       .sort((a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime()),
-    [matches, activeStage]
-  );
+    [matches, activeStage]);
 
   // ── Lock de fase para modo Desafío ────────────────────────────────────────
   const stageLocked = useMemo(() => {
@@ -181,7 +285,6 @@ export default function RoomClient({
   function handleRejected(memberId: string) {
     setPendingMembers((prev) => prev.filter((p) => p.id !== memberId));
   }
-
   async function kickMember(memberId: string, userId: string, displayName: string) {
     if (!confirm(`¿Expulsar a "${displayName}"?\n\nEsta acción no se puede deshacer.`)) return;
     const res = await fetch(`/api/rooms/${room.id}/members/${memberId}/kick`, { method: "DELETE" });
@@ -189,14 +292,12 @@ export default function RoomClient({
     setMembers((prev) => prev.filter((m) => m.id !== memberId));
     setStandings((prev) => prev.filter((s) => s.userId !== userId));
   }
-
   async function deleteRoom() {
     if (!confirm("Vas a eliminar la sala. Esto borra todo. ¿Confirmás?")) return;
     const res = await fetch(`/api/rooms/${room.id}`, { method: "DELETE" });
     if (!res.ok) { alert("No se pudo eliminar"); return; }
     router.push("/");
   }
-
   async function changeRole(memberId: string, newRole: "ADMIN" | "MEMBER") {
     const res = await fetch(`/api/rooms/${room.id}/members/${memberId}/role`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -206,7 +307,6 @@ export default function RoomClient({
     setMembers((prev) => prev.map((m) => m.id === memberId ? { ...m, role: newRole } : m));
   }
 
-  // Grupos (solo para stage GROUP)
   const groups = useMemo(() => {
     if (activeStage !== "GROUP") return [];
     const map = new Map<string, Match[]>();
@@ -230,30 +330,66 @@ export default function RoomClient({
     const init: Record<string, { h: string; a: string; pen: string }> = {};
     for (const m of matches) {
       const p = by.get(m.id);
-      init[m.id] = {
-        h: p ? String(p.predHomeGoals) : "",
-        a: p ? String(p.predAwayGoals) : "",
-        pen: p?.predPenWinner ?? "",
-      };
+      init[m.id] = { h: p ? String(p.predHomeGoals) : "", a: p ? String(p.predAwayGoals) : "", pen: p?.predPenWinner ?? "" };
     }
     return init;
   });
 
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
-  const [liveByMatchUser, setLiveByMatchUser] = useState<Map<string, LivePred>>(new Map());
+  const [allPredsByMatchUser, setAllPredsByMatchUser] = useState<Map<string, LivePred>>(new Map());
+
+  async function loadPredictions(stage: string) {
+    try {
+      const res = await fetch(`/api/rooms/${room.id}/predictions?stage=${stage}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const preds: LivePred[] = (data.predictions ?? []).map((p: any) => ({
+        matchId: p.matchId, userId: p.userId, displayName: p.displayName,
+        h: p.h, a: p.a, penWinner: p.penWinner ?? null,
+      }));
+      const stageMatchIds = new Set(matches.filter((m) => m.stage === stage).map((m) => m.id));
+      setAllPredsByMatchUser((prev) => {
+        const next = new Map(prev);
+        for (const key of Array.from(next.keys())) {
+          if (stageMatchIds.has(key.split("__")[0])) next.delete(key);
+        }
+        for (const p of preds) next.set(`${p.matchId}__${p.userId}`, p);
+        return next;
+      });
+    } catch { /**/ }
+  }
+
+  // Cargar predicciones de todas las stages al montar para que los colores
+  // aparezcan correctamente en cualquier stage desde el inicio
+  useEffect(() => {
+    const stages = matches.map((m) => m.stage).filter((v, i, a) => a.indexOf(v) === i);
+    for (const s of stages) loadPredictions(s);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room.id]);
+
+  // Recargar al cambiar de stage (por si hay predicciones nuevas)
+  useEffect(() => {
+    loadPredictions(activeStage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStage]);
 
   useEffect(() => {
-    const es = new EventSource(`/api/rooms/${room.id}/live`);
-    es.onmessage = (e) => {
-      try {
-        const preds: LivePred[] = JSON.parse(e.data);
-        const m = new Map<string, LivePred>();
-        for (const p of preds) m.set(`${p.matchId}__${p.userId}`, p);
-        setLiveByMatchUser(m);
-      } catch { /**/ }
-    };
-    return () => es.close();
+    let es: EventSource | undefined;
+    try {
+      es = new EventSource(`/api/rooms/${room.id}/live`);
+      es.onmessage = (e) => {
+        try {
+          const preds: LivePred[] = JSON.parse(e.data);
+          setAllPredsByMatchUser((prev) => {
+            const next = new Map(prev);
+            for (const p of preds) next.set(`${p.matchId}__${p.userId}`, p);
+            return next;
+          });
+        } catch { /**/ }
+      };
+    } catch { /**/ }
+    return () => { try { es?.close(); } catch { /**/ } };
   }, [room.id]);
 
   async function saveAll() {
@@ -262,24 +398,26 @@ export default function RoomClient({
       const hN = parseInt(h, 10); const aN = parseInt(a, 10);
       if (isNaN(hN) || isNaN(aN)) return [];
       const match = matches.find((m) => m.id === matchId);
-      return [{
-        matchId,
-        predHomeGoals: hN,
-        predAwayGoals: aN,
-        predPenWinner: (match && KO_STAGES.has(match.stage) && pen.trim()) ? pen.trim() : null,
-      }];
+      return [{ matchId, predHomeGoals: hN, predAwayGoals: aN,
+        predPenWinner: (match && KO_STAGES.has(match.stage) && pen.trim()) ? pen.trim() : null }];
     });
     const res = await fetch(`/api/rooms/${room.id}/predictions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ predictions: entries }),
     });
     const data = await res.json().catch(() => ({}));
     setSaving(false);
-    setMsg(res.ok ? `Guardado ✅ (${data.saved ?? 0} predicciones)` : "Error al guardar.");
+    if (res.ok) { setMsg(`Guardado ✅ (${data.saved ?? 0} predicciones)`); loadPredictions(activeStage); }
+    else setMsg("Error al guardar.");
   }
 
-  // ── Tabla de partidos (reutilizable) ──────────────────────────────────────
+  // ── Estadísticas: calculadas con TODOS los partidos (no solo el stage activo) ──
+  const playerStats = useMemo(
+    () => computePlayerStats(members, allPredsByMatchUser, matches),
+    [members, allPredsByMatchUser, matches]
+  );
+
+  // ── Tabla de partidos ─────────────────────────────────────────────────────
   function MatchTable({ list, groupLabel }: { list: Match[]; groupLabel?: string }) {
     return (
       <div className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur overflow-hidden">
@@ -295,7 +433,6 @@ export default function RoomClient({
               <thead className="bg-white/5">
                 <tr>
                   <th className="px-3 py-2 text-left w-[280px]">Partido</th>
-                  <th className="px-3 py-2 text-center text-white/50 w-16">Real</th>
                   {membersOrdered.map((mb) => (
                     <th key={mb.userId} className={["px-2 py-2 text-center whitespace-nowrap", mb.userId === me.id ? "text-white" : "text-white/80"].join(" ")}>
                       {mb.displayName}
@@ -308,19 +445,13 @@ export default function RoomClient({
                   const kickoff = new Date(m.kickoffAt);
                   const isKO = KO_STAGES.has(m.stage);
                   const hasResult = m.homeGoals !== null && m.awayGoals !== null;
-
-                  let lockedLocal = false;
-                  if (room.editPolicy === "ALLOW_UNTIL_ROUND_CLOSE") {
-                    lockedLocal = stageLocked;
-                  } else {
-                    lockedLocal = Date.now() >= kickoff.getTime();
-                  }
+                  let lockedLocal = room.editPolicy === "ALLOW_UNTIL_ROUND_CLOSE"
+                    ? stageLocked
+                    : Date.now() >= kickoff.getTime();
 
                   const d = draft[m.id] ?? { h: "", a: "", pen: "" };
-                  const hN = parseInt(d.h, 10);
-                  const aN = parseInt(d.a, 10);
-                  const isDraw = !isNaN(hN) && !isNaN(aN) && hN === aN;
-                  const showPenSelector = isKO && isDraw && !lockedLocal;
+                  const hN = parseInt(d.h, 10), aN = parseInt(d.a, 10);
+                  const showPenSelector = isKO && !isNaN(hN) && !isNaN(aN) && hN === aN && !lockedLocal;
 
                   return (
                     <tr key={m.id} className="border-t border-white/8">
@@ -333,71 +464,94 @@ export default function RoomClient({
                           <Flag code={flagCodeFor(m.awayTeam)} alt={m.awayTeam} />
                           <span className="font-medium">{m.awayTeam}</span>
                         </div>
+                        {hasResult && (
+                          <div className="mt-0.5 text-[10px] text-white/50">
+                            Real: <span className="font-bold text-white/80">{m.homeGoals}–{m.awayGoals}</span>
+                            {m.decidedByPenalties && <span className="ml-1 text-yellow-400/70">pen: {m.penWinner}</span>}
+                          </div>
+                        )}
                         {showPenSelector && (
                           <div className="mt-1.5 flex items-center gap-1.5">
                             <span className="text-[10px] text-yellow-400/70">Pen:</span>
-                            <button
-                              onClick={() => setDraft((dd) => ({ ...dd, [m.id]: { ...dd[m.id], pen: m.homeTeam } }))}
-                              className={["text-[10px] px-2 py-0.5 rounded border transition",
-                                d.pen === m.homeTeam ? "border-white/50 bg-white/15 text-white" : "border-white/20 text-white/50 hover:bg-white/10"
-                              ].join(" ")}
-                            >{m.homeTeam}</button>
-                            <button
-                              onClick={() => setDraft((dd) => ({ ...dd, [m.id]: { ...dd[m.id], pen: m.awayTeam } }))}
-                              className={["text-[10px] px-2 py-0.5 rounded border transition",
-                                d.pen === m.awayTeam ? "border-white/50 bg-white/15 text-white" : "border-white/20 text-white/50 hover:bg-white/10"
-                              ].join(" ")}
-                            >{m.awayTeam}</button>
+                            {[m.homeTeam, m.awayTeam].map((team) => (
+                              <button key={team}
+                                onClick={() => setDraft((dd) => ({ ...dd, [m.id]: { ...dd[m.id], pen: team } }))}
+                                className={["text-[10px] px-2 py-0.5 rounded border transition",
+                                  d.pen === team ? "border-white/50 bg-white/15 text-white" : "border-white/20 text-white/50 hover:bg-white/10"
+                                ].join(" ")}
+                              >{team}</button>
+                            ))}
                           </div>
                         )}
                       </td>
 
-                      {/* Resultado real */}
-                      <td className="px-3 py-2 text-center">
-                        {hasResult ? (
-                          <div>
-                            <span className="font-bold text-green-400">{m.homeGoals}–{m.awayGoals}</span>
-                            {m.decidedByPenalties && (
-                              <div className="text-[10px] text-yellow-400/80 mt-0.5">pen: {m.penWinner}</div>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-white/20">—</span>
-                        )}
-                      </td>
-
-                      {/* Columnas por jugador */}
                       {membersOrdered.map((mb) => {
                         const isMeCol = mb.userId === me.id;
-                        const livePred = liveByMatchUser.get(`${m.id}__${mb.userId}`);
+                        const pred = allPredsByMatchUser.get(`${m.id}__${mb.userId}`);
+
+                        // Para el color: cuando el partido está jugado, usar siempre los datos
+                        // del servidor (pred) para garantizar consistencia. Para partidos no
+                        // jugados, usar el draft local.
+                        const colorPredH = hasResult
+                          ? (pred != null ? pred.h : null)
+                          : (isMeCol ? (isNaN(hN) ? null : hN) : (pred != null ? pred.h : null));
+                        const colorPredA = hasResult
+                          ? (pred != null ? pred.a : null)
+                          : (isMeCol ? (isNaN(aN) ? null : aN) : (pred != null ? pred.a : null));
+                        const pillColor = getPillColor(m, colorPredH, colorPredA);
+
                         return (
                           <td key={mb.userId} className="px-2 py-2">
                             {isMeCol ? (
-                              <div className="flex flex-col items-center gap-1">
-                                <div className="flex items-center gap-1">
-                                  <input
-                                    value={d.h}
-                                    onChange={(e) => setDraft((dd) => ({ ...dd, [m.id]: { ...dd[m.id], h: e.target.value } }))}
-                                    disabled={lockedLocal}
-                                    className="w-9 rounded-lg bg-white/10 border border-white/20 px-1 py-1 text-center text-xs text-white outline-none focus:border-white/40 disabled:opacity-40"
-                                    maxLength={2}
-                                  />
-                                  <span className="text-white/40">-</span>
-                                  <input
-                                    value={d.a}
-                                    onChange={(e) => setDraft((dd) => ({ ...dd, [m.id]: { ...dd[m.id], a: e.target.value } }))}
-                                    disabled={lockedLocal}
-                                    className="w-9 rounded-lg bg-white/10 border border-white/20 px-1 py-1 text-center text-xs text-white outline-none focus:border-white/40 disabled:opacity-40"
-                                    maxLength={2}
-                                  />
+                              // Si el partido ya tiene resultado, mostrar pill (datos del servidor)
+                              hasResult ? (
+                                <div className="flex flex-col items-center gap-1 text-center">
+                                  {pred != null ? (
+                                    <>
+                                      <span className={["inline-block rounded-full px-2.5 py-0.5 text-xs tabular-nums", pillColor].join(" ")}>
+                                        {pred.h}–{pred.a}
+                                      </span>
+                                      {isKO && pred.penWinner && (
+                                        <div className="text-[10px] text-yellow-400/70">pen: {pred.penWinner}</div>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <span className="text-white/20">—</span>
+                                  )}
                                 </div>
-                                {isKO && d.pen && (
-                                  <div className="text-[10px] text-yellow-400/70 truncate max-w-[90px]">pen: {d.pen}</div>
-                                )}
-                              </div>
+                              ) : (
+                                // Partido no jugado aún: mostrar inputs editables
+                                <div className="flex flex-col items-center gap-1">
+                                  <div className="flex items-center gap-1">
+                                    <input value={d.h}
+                                      onChange={(e) => setDraft((dd) => ({ ...dd, [m.id]: { ...dd[m.id], h: e.target.value } }))}
+                                      disabled={lockedLocal}
+                                      className="w-9 rounded-lg bg-white/10 border border-white/20 px-1 py-1 text-center text-xs text-white outline-none focus:border-white/40 disabled:opacity-40"
+                                      maxLength={2} />
+                                    <span className="text-white/40">-</span>
+                                    <input value={d.a}
+                                      onChange={(e) => setDraft((dd) => ({ ...dd, [m.id]: { ...dd[m.id], a: e.target.value } }))}
+                                      disabled={lockedLocal}
+                                      className="w-9 rounded-lg bg-white/10 border border-white/20 px-1 py-1 text-center text-xs text-white outline-none focus:border-white/40 disabled:opacity-40"
+                                      maxLength={2} />
+                                  </div>
+                                  {showPenSelector && d.pen && (
+                                    <div className="text-[10px] text-yellow-400/70 truncate max-w-[90px]">pen: {d.pen}</div>
+                                  )}
+                                </div>
+                              )
                             ) : (
-                              <div className="text-center text-white/60">
-                                {livePred ? `${livePred.h}-${livePred.a}` : "—"}
+                              <div className="text-center">
+                                {pred != null ? (
+                                  <div className="flex flex-col items-center gap-1">
+                                    <span className={["inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums", pillColor].join(" ")}>
+                                      {pred.h}–{pred.a}
+                                    </span>
+                                    {isKO && pred.penWinner && (
+                                      <div className="text-[10px] text-yellow-400/70">pen: {pred.penWinner}</div>
+                                    )}
+                                  </div>
+                                ) : <span className="text-white/20">—</span>}
                               </div>
                             )}
                           </td>
@@ -423,11 +577,9 @@ export default function RoomClient({
       </div>
 
       {showPendingModal && (
-        <PendingModal
-          pending={pendingMembers} roomId={room.id}
+        <PendingModal pending={pendingMembers} roomId={room.id}
           onApproved={handleApproved} onRejected={handleRejected}
-          onClose={() => setShowPendingModal(false)}
-        />
+          onClose={() => setShowPendingModal(false)} />
       )}
 
       <section className="relative z-10">
@@ -449,11 +601,9 @@ export default function RoomClient({
                   {room.accessType === "CLOSED" ? "Cerrada 🔒" : "Abierta 🔓"}
                 </span>
                 <span>·</span>
-                {/* ✅ FIX: playedCount sobre total real de partidos */}
+                {/* ✅ Calculado client-side — se actualiza sin reload */}
                 <span>Jugados: <span className="text-white">{playedCount}</span>/{matches.length}</span>
               </div>
-
-              {/* Chips de miembros */}
               <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
                 {membersOrdered.map((m) => {
                   const isMe = m.userId === me.id;
@@ -511,14 +661,12 @@ export default function RoomClient({
 
           {msg && <div className="mb-4 text-sm text-white/80">{msg}</div>}
 
-          {/* Aviso de lock modo Desafío */}
           {room.editPolicy === "ALLOW_UNTIL_ROUND_CLOSE" && stageLocked && (
             <div className="mb-4 rounded-2xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-300">
               🔒 La fase <strong>{STAGE_LABELS[activeStage] ?? activeStage}</strong> ya comenzó — no podés modificar tus predicciones para esta ronda.
             </div>
           )}
 
-          {/* ✅ Tabs de fase */}
           <div className="flex flex-wrap gap-2 mb-5">
             {stagesPresent.map((s) => (
               <button key={s} onClick={() => setActiveStage(s)}
@@ -530,18 +678,18 @@ export default function RoomClient({
             ))}
           </div>
 
-          {/* Contenido principal */}
-          <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
+          {/* Contenido */}
+          <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
             <div className="space-y-4">
-              {activeStage === "GROUP" ? (
-                groups.map(([g, list]) => <MatchTable key={g} list={list} groupLabel={g} />)
-              ) : (
-                <MatchTable list={stageMatches} />
-              )}
+              {activeStage === "GROUP"
+                ? groups.map(([g, list]) => <MatchTable key={g} list={list} groupLabel={g} />)
+                : <MatchTable list={stageMatches} />}
             </div>
 
-            {/* ✅ Posiciones con +3 y +1 */}
-            <div>
+            {/* Panel derecho */}
+            <div className="space-y-4">
+
+              {/* ── Posiciones ── */}
               <div className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur overflow-hidden sticky top-4">
                 <div className="px-5 py-4 border-b border-white/5">
                   <div className="text-sm font-semibold">Posiciones</div>
@@ -554,7 +702,7 @@ export default function RoomClient({
                         <th className="px-2 py-2 text-left">Jugador</th>
                         <th className="px-2 py-2 text-center">Pts</th>
                         <th className="px-2 py-2 text-center text-emerald-400">+3</th>
-                        <th className="px-2 py-2 text-center text-blue-400">+1</th>
+                        <th className="px-2 py-2 text-center text-yellow-400">+1</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -563,19 +711,67 @@ export default function RoomClient({
                           <td className="px-2 py-2 text-white/50">{i + 1}</td>
                           <td className="px-2 py-2 font-medium truncate max-w-[100px]">
                             {s.displayName}
-                            {s.contributionText && (
-                              <div className="text-[10px] text-white/40 truncate">{s.contributionText}</div>
-                            )}
+                            {s.contributionText && <div className="text-[10px] text-white/40 truncate">{s.contributionText}</div>}
                           </td>
                           <td className="px-2 py-2 text-center font-bold text-white">{s.points}</td>
                           <td className="px-2 py-2 text-center text-emerald-400">{s.exactHits}</td>
-                          <td className="px-2 py-2 text-center text-blue-400">{s.outcomeHits}</td>
+                          <td className="px-2 py-2 text-center text-yellow-400">{s.outcomeHits}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               </div>
+
+              {/* ── Estadísticas: líderes + modal completo ── */}
+              {playerStats.length > 0 && playedCount > 0 && (() => {
+                // Calcular líder de cada stat
+                const byEff   = [...playerStats].sort((a, b) => b.effectivenessScore - a.effectivenessScore)[0];
+                const byExact = [...playerStats].sort((a, b) => b.exactRatio - a.exactRatio)[0];
+                const byDist  = [...playerStats].sort((a, b) => a.avgDistance - b.avgDistance)[0];
+                const byHome  = [...playerStats].sort((a, b) => b.homeEffectiveness - a.homeEffectiveness)[0];
+                const byAway  = [...playerStats].sort((a, b) => b.awayEffectiveness - a.awayEffectiveness)[0];
+                const byPPM   = [...playerStats].sort((a, b) => b.avgPointsPerMatch - a.avgPointsPerMatch)[0];
+                const byStreak= [...playerStats].sort((a, b) => b.maxStreak - a.maxStreak)[0];
+
+                const stats = [
+                  { label: "Efectividad general", icon: "🎯", leader: byEff,    value: `${byEff.effectivenessScore}%`,       color: "text-violet-300" },
+                  { label: "Marcador exacto",      icon: "✅", leader: byExact,  value: `${byExact.exactRatio}%`,             color: "text-emerald-300" },
+                  { label: "Distancia mínima",     icon: "📐", leader: byDist,   value: `${byDist.avgDistance} goles`,        color: "text-sky-300" },
+                  { label: "Mejor en locales",     icon: "🏠", leader: byHome,   value: `${byHome.homeEffectiveness}%`,       color: "text-orange-300" },
+                  { label: "Mejor en visitantes",  icon: "✈️", leader: byAway,   value: `${byAway.awayEffectiveness}%`,       color: "text-blue-300" },
+                  { label: "Pts por partido",      icon: "📈", leader: byPPM,    value: `${byPPM.avgPointsPerMatch.toFixed(2)} pts`,  color: "text-violet-300" },
+                  { label: "Racha máxima",         icon: "🔥", leader: byStreak, value: `${byStreak.maxStreak} seguidos`,     color: "text-yellow-300" },
+                ];
+
+                return (
+                  <>
+                    {/* Panel resumido: líder por stat */}
+                    <div className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur overflow-hidden">
+                      <div className="px-5 py-4 border-b border-white/5">
+                        <div className="text-sm font-semibold">Estadísticas</div>
+                      </div>
+                      <div className="px-4 py-1">
+                        {stats.map(({ label, icon, leader, value, color }) => (
+                          <div key={label} className="flex items-center justify-between gap-2 py-2.5 border-b border-white/5 last:border-0">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-sm shrink-0">{icon}</span>
+                              <div className="min-w-0">
+                                <div className="text-[10px] text-white/40 leading-none mb-0.5">{label}</div>
+                                <div className={["text-xs font-semibold truncate", leader.userId === me.id ? "text-white" : "text-white/80"].join(" ")}>
+                                  {leader.displayName}
+                                </div>
+                              </div>
+                            </div>
+                            <span className={["text-xs font-mono font-bold shrink-0", color].join(" ")}>{value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+
             </div>
           </div>
 
