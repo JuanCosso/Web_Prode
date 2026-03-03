@@ -16,32 +16,40 @@ function WarningModal({
   return createPortal(
     <div className="fixed inset-0 z-[9999]">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-
       <div className="absolute inset-0 flex items-center justify-center p-4">
-        <div className="bg-slate-900 p-6 rounded-2xl max-w-md w-full border border-white/10 shadow-2xl">
-          <h2 className="text-lg font-semibold mb-3">
-            ⚠ Atención
-          </h2>
+        <div className="bg-slate-900 p-6 rounded-2xl max-w-md w-full border border-yellow-400/20 shadow-2xl shadow-black/50">
+          
+          {/* Header con franja amarilla */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-yellow-400/15 flex items-center justify-center">
+              <span className="text-yellow-400 text-lg">⚠</span>
+            </div>
+            <h2 className="text-lg font-semibold text-yellow-400">
+              Atención
+            </h2>
+          </div>
 
-          <p className="text-white/70 text-sm">
+          {/* Línea separadora amarilla */}
+          <div className="h-px bg-yellow-400/20 mb-4" />
+
+          <p className="text-white/70 text-sm leading-relaxed">
             Tu cuenta de invitado tiene partidas o predicciones guardadas.
             <br /><br />
-            Si la cuenta de Google a la que ingreses ya tiene datos,
-            perderás lo realizado como invitado.
+            Si la cuenta de Google a la que ingreses <span className="text-white font-medium">ya tiene datos propios</span>, perderás todo lo realizado como invitado.
           </p>
 
           <div className="flex justify-end gap-3 mt-6">
             <button
               onClick={onCancel}
-              className="px-4 py-2 text-white/70"
+              className="px-4 py-2 text-sm text-white/60 hover:text-white transition rounded-lg hover:bg-white/5"
             >
               Cancelar
             </button>
             <button
               onClick={onConfirm}
-              className="px-4 py-2 bg-white text-black rounded-lg"
+              className="px-5 py-2 text-sm bg-white text-slate-950 font-semibold rounded-xl hover:bg-white/90 transition"
             >
-              Continuar
+              Continuar de todas formas
             </button>
           </div>
         </div>

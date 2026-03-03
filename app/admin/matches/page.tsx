@@ -41,6 +41,14 @@ function fmtKickoff(iso: string) {
   });
 }
 
+function randomScore(): { h: number; a: number } {
+  // Distribución realista de resultados de fútbol
+  const weights = [0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 5];
+  const h = weights[Math.floor(Math.random() * weights.length)];
+  const a = weights[Math.floor(Math.random() * weights.length)];
+  return { h, a };
+}
+
 export default function AdminMatchesPage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +65,11 @@ export default function AdminMatchesPage() {
   const [newAwayTeam, setNewAwayTeam] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
+
+  // Estado para acciones masivas
+  const [randomizing, setRandomizing] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [bulkMsg, setBulkMsg] = useState("");
 
   useEffect(() => {
     fetch("/api/admin/matches")
@@ -110,11 +123,70 @@ export default function AdminMatchesPage() {
     }
 
     setSaveMsg("✅ Guardado");
-    // Actualizar lista local
     setMatches((prev) =>
       prev.map((m) => m.id === data.match.id ? { ...m, ...data.match } : m)
     );
     setEditing(null);
+  }
+
+  async function randomizeGroupResults() {
+    const groupMatches = matches.filter((m) => m.stage === "GROUP");
+    if (!confirm(`¿Cargar resultados random para ${groupMatches.length} partidos de fase de grupos?`)) return;
+
+    setRandomizing(true);
+    setBulkMsg("");
+    let ok = 0;
+
+    for (const m of groupMatches) {
+      const { h, a } = randomScore();
+      const res = await fetch(`/api/admin/matches/${m.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ homeGoals: h, awayGoals: a, decidedByPenalties: false, penWinner: null }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMatches((prev) => prev.map((x) => x.id === data.match.id ? { ...x, ...data.match } : x));
+        ok++;
+      }
+    }
+
+    setRandomizing(false);
+    setBulkMsg(`✅ ${ok}/${groupMatches.length} resultados cargados`);
+  }
+
+  async function clearAllResults() {
+    const withResults = matches.filter((m) => m.homeGoals !== null || m.awayGoals !== null);
+    if (withResults.length === 0) {
+      setBulkMsg("ℹ️ No hay resultados para borrar.");
+      return;
+    }
+    if (!confirm(`¿Borrar los resultados de ${withResults.length} partido(s)? Esta acción no se puede deshacer.`)) return;
+
+    setClearing(true);
+    setBulkMsg("");
+    let ok = 0;
+
+    for (const m of withResults) {
+      const res = await fetch(`/api/admin/matches/${m.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ homeGoals: null, awayGoals: null, decidedByPenalties: false, penWinner: null }),
+      });
+      if (res.ok) {
+        setMatches((prev) =>
+          prev.map((x) =>
+            x.id === m.id
+              ? { ...x, homeGoals: null, awayGoals: null, decidedByPenalties: false, penWinner: null }
+              : x
+          )
+        );
+        ok++;
+      }
+    }
+
+    setClearing(false);
+    setBulkMsg(`🗑️ ${ok}/${withResults.length} resultados eliminados`);
   }
 
   const stagesPresent = STAGE_ORDER.filter((s) =>
@@ -143,7 +215,32 @@ export default function AdminMatchesPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <div className="max-w-5xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-1">Admin — Resultados</h1>
+
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 mb-1 flex-wrap">
+          <h1 className="text-2xl font-bold">Admin — Resultados</h1>
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={randomizeGroupResults}
+              disabled={randomizing || clearing}
+              className="rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-xs font-medium hover:bg-white/10 transition disabled:opacity-50"
+            >
+              {randomizing ? "Cargando..." : "🎲 Random (Grupos)"}
+            </button>
+            <button
+              onClick={clearAllResults}
+              disabled={randomizing || clearing}
+              className="rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 px-4 py-2 text-xs font-medium hover:bg-red-500/20 transition disabled:opacity-50"
+            >
+              {clearing ? "Borrando..." : "🗑️ Borrar todos los resultados"}
+            </button>
+          </div>
+        </div>
+
+        {bulkMsg && (
+          <p className="text-xs text-white/60 mb-4 mt-1">{bulkMsg}</p>
+        )}
+
         <p className="text-white/50 text-sm mb-6">
           Cargá los resultados reales de cada partido.
         </p>
@@ -234,7 +331,7 @@ export default function AdminMatchesPage() {
               </h2>
               <p className="text-xs text-white/40 mb-5">{editing.fifaId} · {editing.city}</p>
 
-              {/* Equipos (para KO, cuando se conocen los clasificados) */}
+              {/* Equipos */}
               <div className="mb-4">
                 <label className="block text-xs text-white/60 mb-2">Equipos (opcional, para actualizar placeholders)</label>
                 <div className="flex gap-2">
@@ -279,7 +376,7 @@ export default function AdminMatchesPage() {
                 </div>
               </div>
 
-              {/* Penales (solo si aplica) */}
+              {/* Penales */}
               {["R32", "R16", "QF", "SF", "FINAL"].includes(editing.stage) && (
                 <div className="mb-5">
                   <label className="flex items-center gap-2 cursor-pointer mb-2">
