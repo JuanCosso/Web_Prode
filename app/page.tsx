@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/src/lib/prisma";
 import { getCurrentUser } from "@/src/lib/auth-user";
 import { AuthButton } from "@/components/auth/AuthButton";
+import DynamicHeroTitle from "@/components/DynamicHeroTitle"; // Asumo que lo crearás en este path, o podés ponerlo en este mismo archivo abajo.
 
 export default async function Home() {
   const me = await getCurrentUser();
@@ -64,12 +65,8 @@ export default async function Home() {
       <section className="relative z-10">
         <div className="mx-auto flex min-h-[calc(100vh-61px)] max-w-6xl flex-col items-center justify-center px-4 pb-16 pt-8 sm:px-6">
 
-          <div className="text-center max-w-2xl w-full">
-            <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-              ¿Quién sabe más
-              <br />
-              <span className="text-white/60">de fútbol entre vos y tus amigos?</span>
-            </h1>
+          <div className="text-center max-w-3xl w-full">
+            <DynamicHeroTitle />
             <p className="mt-5 text-base text-white/55 sm:text-lg">
               Predecí resultados, sumá puntos y demostralo.
             </p>
