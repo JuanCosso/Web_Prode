@@ -40,12 +40,16 @@ export async function getOrCreateUser() {
   let uid = store.get(COOKIE_NAME)?.value;
 
   if (!uid) {
-    return null;
+    throw new Error("UNAUTHENTICATED");  // ✅ el tipo de retorno queda como User
   }
 
   const user = await prisma.user.findUnique({
     where: { id: uid },
   });
+
+  if (!user) {
+    throw new Error("USER_NOT_FOUND");   // ✅ nunca retorna null
+  }
 
   return user;
 }
