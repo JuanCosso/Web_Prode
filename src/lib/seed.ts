@@ -6,15 +6,19 @@ async function main() {
   const now = new Date();
   const matches = [
     {
-      stage: "Group",
+      stage: "GROUP",
       group: "A",
+      matchday: 1,                          // ← faltaba
+      city: "Buenos Aires",                 // ← faltaba
       kickoffAt: new Date(now.getTime() + 1000 * 60 * 60 * 24),
       homeTeam: "Argentina",
       awayTeam: "Canada",
     },
     {
-      stage: "Group",
+      stage: "GROUP",
       group: "A",
+      matchday: 2,                          // ← faltaba
+      city: "Buenos Aires",                 // ← faltaba
       kickoffAt: new Date(now.getTime() + 1000 * 60 * 60 * 48),
       homeTeam: "Mexico",
       awayTeam: "USA",
