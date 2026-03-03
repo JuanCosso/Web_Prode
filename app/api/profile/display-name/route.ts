@@ -6,6 +6,14 @@ import { parseDisplayName } from "@/src/lib/displayName";
 
 export async function PATCH(req: Request) {
   const me = await getOrCreateUser();
+
+  if (!me) {
+    return NextResponse.json(
+      { error: "UNAUTHORIZED", message: "No autorizado." },
+      { status: 401 }
+    );
+  }
+
   const body = await req.json().catch(() => ({}));
 
   const raw = String(body?.displayName ?? "");
