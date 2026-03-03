@@ -154,6 +154,7 @@ export default async function RoomPage({
       isOwner={isOwner}
       matches={matches.map((m) => ({
         ...m,
+        kickoffAt: m.kickoffAt.toISOString(),   // ← convierte Date → string
         kickoffLabel: fmt(m.kickoffAt),
       }))}
       myPreds={myPreds}
