@@ -102,7 +102,15 @@ function computePlayerStats(
   allPreds: Map<string, LivePred>,
   matches: Match[]
 ): PlayerStat[] {
-  const played = matches.filter((m) => m.homeGoals !== null && m.awayGoals !== null);
+  const played = matches
+  .filter((m) => m.homeGoals !== null && m.awayGoals !== null)
+  .sort((a, b) => {
+    // Primero por grupo (A, B, C...), luego por matchday dentro del grupo
+    const gA = a.group ?? "ZZZ";
+    const gB = b.group ?? "ZZZ";
+    if (gA !== gB) return gA.localeCompare(gB);
+    return (a.matchday ?? 0) - (b.matchday ?? 0);
+  });
 
   return members.map((mb) => {
     let pts = 0, maxPts = 0, exactHits = 0, playedPreds = 0;
