@@ -5,9 +5,9 @@ import { RoomRole, MembershipStatus } from "@prisma/client";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { roomId: string; memberId: string } }
+  { params }: { params: Promise<{ roomId: string; memberId: string }> }
 ) {
-  const { roomId, memberId } = params;
+  const { roomId, memberId } = await params;
   const body = await req.json().catch(() => ({}));
   const role = body?.role as RoomRole | undefined;
 
