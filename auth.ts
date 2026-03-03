@@ -111,7 +111,32 @@ async function mergeGuestIntoUser(guestId: string, userId: string) {
 }
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  adapter: {
+    ...PrismaAdapter(prisma),
+    createUser: async (data) => {
+      const { email, name, image, emailVerified, id } = data as any;
+      const base = name ?? email?.split("@")[0] ?? "Usuario";
+      // Generar displayName único basado en nombre de Google
+      let displayName = base.slice(0, 20);
+      const exists = await prisma.user.findFirst({
+        where: { displayName },
+        select: { id: true },
+      });
+      if (exists) {
+        displayName = `${displayName.slice(0, 15)}_${Math.random().toString(36).slice(2, 6)}`;
+      }
+      return prisma.user.create({
+        data: {
+          id,
+          email,
+          name,
+          image,
+          emailVerified,
+          displayName,
+        },
+      });
+    },
+  },
   session: { strategy: "database" },
   providers: [
     GoogleProvider({
