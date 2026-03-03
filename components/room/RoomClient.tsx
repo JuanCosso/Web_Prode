@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -36,6 +37,8 @@ const STAGE_LABELS: Record<string, string> = {
 };
 const MAX_VISIBLE_MEMBERS = 10;
 const MAX_VISIBLE_STANDINGS = 20;
+// Penalización de distancia para partidos no predichos
+const PENALTY_DIST = 5;
 
 function modeLabel(p: string) { return p === "STRICT_PER_MATCH" ? "Mundial" : "Desafío"; }
 
@@ -78,41 +81,219 @@ function getPillColor(m: Match, predH: number | null, predA: number | null): str
 // ─── Stats ───────────────────────────────────────────────────────────────────
 function calcOutcome(h: number, a: number) { return h > a ? "H" : h < a ? "A" : "D"; }
 
-function computePlayerStats(members: Member[], allPreds: Map<string, LivePred>, matches: Match[]) {
+type PlayerStat = {
+  userId: string;
+  displayName: string;
+  effectivenessScore: number; // % pts obtenidos / pts máximos posibles (1 decimal)
+  exactRatio: number;         // % exactos sobre partidos predichos (1 decimal)
+  avgDistance: number;        // distancia prom al resultado; no predichos = PENALTY_DIST
+  homeEffectiveness: number;  // % efectividad apostando local
+  awayEffectiveness: number;  // % efectividad apostando visitante
+  avgPointsPerMatch: number;  // pts promedio por partido predicho
+  coverage: number;           // % partidos predichos sobre total jugados
+  maxStreak: number;          // racha máxima de partidos consecutivos con puntos
+  worstStreak: number;        // peor racha: máx partidos seguidos sin sumar
+  playedPreds: number;
+  totalPlayed: number;
+};
+
+function computePlayerStats(
+  members: Member[],
+  allPreds: Map<string, LivePred>,
+  matches: Match[]
+): PlayerStat[] {
   const played = matches.filter((m) => m.homeGoals !== null && m.awayGoals !== null);
+
   return members.map((mb) => {
     let pts = 0, maxPts = 0, exactHits = 0, playedPreds = 0;
-    let totalDist = 0, distCount = 0, homeTotal = 0, homeCorrect = 0, awayTotal = 0, awayCorrect = 0;
+    let totalDist = 0, homeTotal = 0, homeCorrect = 0, awayTotal = 0, awayCorrect = 0;
+    // ✅ FIX racha: todos los partidos jugados entran al array, no solo los predichos
     const streakBits: boolean[] = [];
+
     for (const m of played) {
       const pred = allPreds.get(`${m.id}__${mb.userId}`);
       maxPts += 3;
-      if (!pred) continue;
+
+      if (!pred) {
+        // No predicho → fallo en racha + penalización en distancia
+        streakBits.push(false);
+        totalDist += PENALTY_DIST;
+        continue;
+      }
+
       playedPreds++;
       const exact = pred.h === m.homeGoals && pred.a === m.awayGoals;
       const outcomeOk = !exact && calcOutcome(pred.h, pred.a) === calcOutcome(m.homeGoals!, m.awayGoals!);
-      if (exact) { pts += 3; exactHits++; } else if (outcomeOk) { pts += 1; }
+
+      if (exact) { pts += 3; exactHits++; }
+      else if (outcomeOk) { pts += 1; }
+
       streakBits.push(exact || outcomeOk);
       totalDist += Math.abs(pred.h - m.homeGoals!) + Math.abs(pred.a - m.awayGoals!);
-      distCount++;
+
       const po = calcOutcome(pred.h, pred.a);
       const ptm = exact ? 3 : outcomeOk ? 1 : 0;
       if (po === "H") { homeTotal++; homeCorrect += ptm; }
       else if (po === "A") { awayTotal++; awayCorrect += ptm; }
     }
+
+    // Racha máxima y peor racha
     let maxStreak = 0, cur = 0;
-    for (const h of streakBits) { if (h) { cur++; maxStreak = Math.max(maxStreak, cur); } else cur = 0; }
+    let worstStreak = 0, curBad = 0;
+    for (const hit of streakBits) {
+      if (hit) { cur++; maxStreak = Math.max(maxStreak, cur); curBad = 0; }
+      else { curBad++; worstStreak = Math.max(worstStreak, curBad); cur = 0; }
+    }
+
+    const totalPlayed = played.length;
+
     return {
-      userId: mb.userId, displayName: mb.displayName,
-      effectivenessScore: maxPts > 0 ? Math.round((pts / maxPts) * 100) : 0,
-      exactRatio: playedPreds > 0 ? Math.round((exactHits / playedPreds) * 100) : 0,
-      avgDistance: distCount > 0 ? Math.round((totalDist / distCount) * 10) / 10 : 0,
-      homeEffectiveness: homeTotal > 0 ? Math.round((homeCorrect / (homeTotal * 3)) * 100) : 0,
-      awayEffectiveness: awayTotal > 0 ? Math.round((awayCorrect / (awayTotal * 3)) * 100) : 0,
+      userId: mb.userId,
+      displayName: mb.displayName,
+      // 1 decimal para evitar empates visuales por redondeo
+      effectivenessScore: maxPts > 0 ? Math.round((pts / maxPts) * 1000) / 10 : 0,
+      exactRatio: playedPreds > 0 ? Math.round((exactHits / playedPreds) * 1000) / 10 : 0,
+      // Distancia sobre TODOS los partidos jugados (penaliza no predichos)
+      avgDistance: totalPlayed > 0 ? Math.round((totalDist / totalPlayed) * 10) / 10 : 0,
+      homeEffectiveness: homeTotal > 0 ? Math.round((homeCorrect / (homeTotal * 3)) * 1000) / 10 : 0,
+      awayEffectiveness: awayTotal > 0 ? Math.round((awayCorrect / (awayTotal * 3)) * 1000) / 10 : 0,
       avgPointsPerMatch: playedPreds > 0 ? Math.round((pts / playedPreds) * 100) / 100 : 0,
-      maxStreak, playedPreds,
+      coverage: totalPlayed > 0 ? Math.round((playedPreds / totalPlayed) * 1000) / 10 : 0,
+      maxStreak,
+      worstStreak,
+      playedPreds,
+      totalPlayed,
     };
   });
+}
+
+// ─── StatsModal ───────────────────────────────────────────────────────────────
+function StatsModal({
+  stats,
+  me,
+  onClose,
+}: {
+  stats: PlayerStat[];
+  me: Me;
+  onClose: () => void;
+}) {
+  if (typeof window === "undefined") return null;
+
+  type Col = {
+    label: string;
+    sublabel: string;
+    key: keyof PlayerStat;
+    format: (v: number) => string;
+    best: "max" | "min";
+  };
+
+  const cols: Col[] = [
+    { label: "Efectividad",  sublabel: "pts / máx posible",          key: "effectivenessScore", format: v => `${v}%`,      best: "max" },
+    { label: "Exactos",      sublabel: "% marcadores exactos",       key: "exactRatio",         format: v => `${v}%`,      best: "max" },
+    { label: "Precisión",    sublabel: "dist. prom. al resultado",   key: "avgDistance",        format: v => `${v}`,       best: "min" },
+    { label: "Locales",      sublabel: "efect. apostando local",     key: "homeEffectiveness",  format: v => `${v}%`,      best: "max" },
+    { label: "Visitantes",   sublabel: "efect. apostando visitante", key: "awayEffectiveness",  format: v => `${v}%`,      best: "max" },
+    { label: "Pts/partido",  sublabel: "promedio por predicho",      key: "avgPointsPerMatch",  format: v => v.toFixed(2), best: "max" },
+    { label: "Cobertura",    sublabel: "% partidos predichos",       key: "coverage",           format: v => `${v}%`,      best: "max" },
+    { label: "Racha máx.",   sublabel: "partidos seguidos con pts",  key: "maxStreak",          format: v => `${v}`,       best: "max" },
+    { label: "Peor racha",   sublabel: "partidos seguidos sin pts",  key: "worstStreak",        format: v => `${v}`,       best: "min" },
+  ];
+
+  const sorted = [...stats].sort((a, b) => b.effectivenessScore - a.effectivenessScore);
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999]">
+      <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 flex items-center justify-center p-4">
+        <div className="relative bg-slate-900 border border-white/15 rounded-2xl w-full max-w-4xl shadow-2xl max-h-[85vh] flex flex-col">
+
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
+            <div>
+              <h2 className="font-semibold text-base">Estadísticas detalladas</h2>
+              <p className="text-[11px] text-white/40 mt-0.5">
+                {stats[0]?.totalPlayed ?? 0} partidos jugados · ordenado por efectividad
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition text-lg leading-none"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Tabla */}
+          <div className="overflow-auto flex-1">
+            <table className="w-full text-xs" style={{ minWidth: 660 }}>
+              <thead className="sticky top-0 bg-slate-900 z-10">
+                <tr className="border-b border-white/10">
+                  <th className="px-4 py-3 text-left text-white/50 font-medium">Jugador</th>
+                  {cols.map(c => (
+                    <th key={c.key as string} className="px-3 py-3 text-center font-medium whitespace-nowrap">
+                      <div className="text-white/70">{c.label}</div>
+                      <div className="text-[10px] text-white/30 font-normal mt-px">{c.sublabel}</div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {sorted.map((s) => {
+                  const isMe = s.userId === me.id;
+                  return (
+                    <tr
+                      key={s.userId}
+                      className={[
+                        "border-t border-white/5 transition",
+                        isMe ? "bg-white/5" : "hover:bg-white/[0.02]",
+                      ].join(" ")}
+                    >
+                      <td className="px-4 py-3 font-medium whitespace-nowrap">
+                        <span className={isMe ? "text-white" : "text-white/70"}>
+                          {s.displayName}
+                        </span>
+                        {isMe && <span className="ml-1.5 text-[10px] text-white/25">(vos)</span>}
+                      </td>
+                      {cols.map(c => {
+                        const vals = stats.map(x => x[c.key] as number);
+                        const bestVal = c.best === "max" ? Math.max(...vals) : Math.min(...vals);
+                        const isBest = (s[c.key] as number) === bestVal && stats.length > 1;
+                        return (
+                          <td key={c.key as string} className="px-3 py-3 text-center tabular-nums">
+                            <span className={[
+                              "font-mono",
+                              isBest
+                                ? c.best === "max"
+                                  ? "text-emerald-400 font-bold"
+                                  : "text-sky-400 font-bold"
+                                : isMe
+                                  ? "text-white/80"
+                                  : "text-white/45",
+                            ].join(" ")}>
+                              {c.format(s[c.key] as number)}
+                            </span>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Footer leyenda */}
+          <div className="px-5 py-3 border-t border-white/10 shrink-0 flex flex-wrap gap-x-5 gap-y-1 text-[10px] text-white/25">
+            <span><span className="text-emerald-400 font-bold">verde</span> = mejor (mayor)</span>
+            <span><span className="text-sky-400 font-bold">azul</span> = mejor (menor)</span>
+            <span>Precisión: los no predichos suman {PENALTY_DIST} goles de penalización al promedio</span>
+          </div>
+
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
 }
 
 // ─── PendingModal ─────────────────────────────────────────────────────────────
@@ -243,8 +424,8 @@ export default function RoomClient({
   const [showPendingModal, setShowPendingModal] = useState(false);
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [showAllStandings, setShowAllStandings] = useState(false);
+  const [showStatsModal, setShowStatsModal] = useState(false);
 
-  // Ancho de columna "Partido": 160px en móvil (<640px), 260px en desktop
   const [matchColWidth, setMatchColWidth] = useState(260);
   useEffect(() => {
     function update() { setMatchColWidth(window.innerWidth < 640 ? 160 : 260); }
@@ -332,7 +513,6 @@ export default function RoomClient({
   const [msg, setMsg] = useState("");
   const [allPredsByMatchUser, setAllPredsByMatchUser] = useState<Map<string, LivePred>>(new Map());
 
-  // ── FIX: solo dígitos, sin negativos, letras ni símbolos ─────────────────
   function handleScoreInput(matchId: string, field: "h" | "a", raw: string) {
     const clean = raw.replace(/[^0-9]/g, "").replace(/^0+(\d)/, "$1").slice(0, 2);
     setDraft((dd) => ({ ...dd, [matchId]: { ...dd[matchId], [field]: clean } }));
@@ -388,7 +568,6 @@ export default function RoomClient({
     return () => { try { es?.close(); } catch { /**/ } };
   }, [room.id]);
 
-  // ── FIX: solo contar predicciones nuevas o modificadas ───────────────────
   async function saveAll() {
     setSaving(true); setMsg("");
     const entries = Object.entries(draft).flatMap(([matchId, { h, a, pen }]) => {
@@ -425,7 +604,7 @@ export default function RoomClient({
     [members, allPredsByMatchUser, matches]
   );
 
-  // ─── Función renderMatchTable (ya no es un componente para evitar scroll jumps) ───
+  // ─── renderMatchTable ─────────────────────────────────────────────────────
   const renderMatchTable = (list: Match[], groupLabel?: string) => {
     const MATCH_COL = matchColWidth;
     const PLAYER_COL = 130;
@@ -611,14 +790,17 @@ export default function RoomClient({
           onChangeRole={changeRole} onKick={kickMember}
           onClose={() => setShowMembersModal(false)} />
       )}
+      {showStatsModal && (
+        <StatsModal stats={playerStats} me={me} onClose={() => setShowStatsModal(false)} />
+      )}
 
       <section className="relative z-10">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
 
-          {/* ── Header corregido: Título a la izq, Botones a la der siempre ── */}
+          {/* ── Header ── */}
           <div className="mb-6 flex flex-col gap-4">
             <div className="flex flex-wrap items-start justify-between gap-4">
-              
+
               {/* Lado izquierdo */}
               <div className="min-w-0 flex-1">
                 <div className="mb-1">
@@ -664,7 +846,7 @@ export default function RoomClient({
               </div>
             </div>
 
-            {/* Chips jugadores separados abajo */}
+            {/* Chips jugadores */}
             <div className="flex flex-wrap gap-1.5 text-xs">
               {visibleMembers.map((m) => {
                 const isMe = m.userId === me.id;
@@ -777,22 +959,28 @@ export default function RoomClient({
 
               {/* Estadísticas */}
               {playerStats.length > 0 && playedCount > 0 && (() => {
-                const byEff    = [...playerStats].sort((a, b) => b.effectivenessScore - a.effectivenessScore)[0];
-                const byExact  = [...playerStats].sort((a, b) => b.exactRatio - a.exactRatio)[0];
-                const byDist   = [...playerStats].sort((a, b) => a.avgDistance - b.avgDistance)[0];
-                const byHome   = [...playerStats].sort((a, b) => b.homeEffectiveness - a.homeEffectiveness)[0];
-                const byAway   = [...playerStats].sort((a, b) => b.awayEffectiveness - a.awayEffectiveness)[0];
-                const byPPM    = [...playerStats].sort((a, b) => b.avgPointsPerMatch - a.avgPointsPerMatch)[0];
-                const byStreak = [...playerStats].sort((a, b) => b.maxStreak - a.maxStreak)[0];
+                const byEff      = [...playerStats].sort((a, b) => b.effectivenessScore - a.effectivenessScore)[0];
+                const byExact    = [...playerStats].sort((a, b) => b.exactRatio - a.exactRatio)[0];
+                const byDist     = [...playerStats].sort((a, b) => a.avgDistance - b.avgDistance)[0];
+                const byHome     = [...playerStats].sort((a, b) => b.homeEffectiveness - a.homeEffectiveness)[0];
+                const byAway     = [...playerStats].sort((a, b) => b.awayEffectiveness - a.awayEffectiveness)[0];
+                const byPPM      = [...playerStats].sort((a, b) => b.avgPointsPerMatch - a.avgPointsPerMatch)[0];
+                const byCoverage = [...playerStats].sort((a, b) => b.coverage - a.coverage)[0];
+                const byStreak   = [...playerStats].sort((a, b) => b.maxStreak - a.maxStreak)[0];
+                const byWorst    = [...playerStats].sort((a, b) => a.worstStreak - b.worstStreak)[0];
+
                 const stats = [
-                  { label: "Efectividad general", icon: "🎯", leader: byEff,    value: `${byEff.effectivenessScore}%`,              color: "text-violet-300" },
-                  { label: "Marcador exacto",     icon: "✅", leader: byExact,  value: `${byExact.exactRatio}%`,                    color: "text-emerald-300" },
-                  { label: "Distancia mínima",    icon: "📐", leader: byDist,   value: `${byDist.avgDistance} goles`,               color: "text-sky-300" },
-                  { label: "Mejor en locales",    icon: "🏠", leader: byHome,   value: `${byHome.homeEffectiveness}%`,              color: "text-orange-300" },
-                  { label: "Mejor en visitantes", icon: "✈️", leader: byAway,   value: `${byAway.awayEffectiveness}%`,              color: "text-blue-300" },
-                  { label: "Pts por partido",     icon: "📈", leader: byPPM,    value: `${byPPM.avgPointsPerMatch.toFixed(2)} pts`, color: "text-violet-300" },
-                  { label: "Racha máxima",        icon: "🔥", leader: byStreak, value: `${byStreak.maxStreak} seguidos`,            color: "text-yellow-300" },
+                  { label: "Efectividad",        icon: "🎯", leader: byEff,      value: `${byEff.effectivenessScore}%`,              color: "text-violet-300" },
+                  { label: "Marcador exacto",     icon: "✅", leader: byExact,    value: `${byExact.exactRatio}%`,                    color: "text-emerald-300" },
+                  { label: "Mejor precisión",     icon: "📐", leader: byDist,     value: `${byDist.avgDistance} goles`,               color: "text-sky-300" },
+                  { label: "Mejor en locales",    icon: "🏠", leader: byHome,     value: `${byHome.homeEffectiveness}%`,              color: "text-orange-300" },
+                  { label: "Mejor en visitantes", icon: "✈️",  leader: byAway,     value: `${byAway.awayEffectiveness}%`,              color: "text-blue-300" },
+                  { label: "Pts por partido",     icon: "📈", leader: byPPM,      value: `${byPPM.avgPointsPerMatch.toFixed(2)} pts`, color: "text-violet-300" },
+                  { label: "Cobertura",           icon: "📋", leader: byCoverage, value: `${byCoverage.coverage}%`,                  color: "text-teal-300" },
+                  { label: "Racha máxima",        icon: "🔥", leader: byStreak,   value: `${byStreak.maxStreak} seguidos`,            color: "text-yellow-300" },
+                  { label: "Peor racha",          icon: "🧊", leader: byWorst,    value: `${byWorst.worstStreak} sin puntuar`,        color: "text-slate-400" },
                 ];
+
                 return (
                   <div className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur overflow-hidden">
                     <div className="px-5 py-4 border-b border-white/5">
@@ -813,6 +1001,15 @@ export default function RoomClient({
                           <span className={["text-xs font-mono font-bold shrink-0", color].join(" ")}>{value}</span>
                         </div>
                       ))}
+                    </div>
+                    {/* Botón Ver más — estilo igual a ← Inicio */}
+                    <div className="px-5 py-3 border-t border-white/5 flex justify-end">
+                      <button
+                        onClick={() => setShowStatsModal(true)}
+                        className="text-xs text-white/40 hover:text-white/70 transition"
+                      >
+                        Ver más →
+                      </button>
                     </div>
                   </div>
                 );
