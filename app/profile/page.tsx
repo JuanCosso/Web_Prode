@@ -16,7 +16,7 @@ export default async function ProfilePage() {
   return (
     <main className="relative min-h-screen overflow-hidden text-white">
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-cover bg-center scale-105" style={{ backgroundImage: "url('/img/wallpaper.webp')" }} />
+        <div className="absolute inset-0 bg-cover bg-center scale-105" style={{ backgroundImage: "url('/img/LogoProde.webp')" }} />
         <div className="absolute inset-0 bg-slate-950/75" />
       </div>
 

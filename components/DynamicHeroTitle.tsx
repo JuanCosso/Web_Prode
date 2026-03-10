@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 
 const PAISES = [
-    // Anfitriones
-    "Canadá", "Estados Unidos", "México",
     
     // CONMEBOL (Sudamérica)
     "Argentina", "Brasil", "Uruguay", "Colombia", "Ecuador", "Paraguay", "Bolivia",
@@ -12,18 +10,18 @@ const PAISES = [
     // UEFA (Europa)
     "Francia", "Inglaterra", "España", "Alemania", "Países Bajos", "Portugal", 
     "Italia", "Bélgica", "Croacia", "Suiza", "Austria", "Noruega", 
-    "Escocia", "Dinamarca", "Polonia", "República Checa",
+    "Escocia", "Dinamarca",
     
     // AFC (Asia)
     "Japón", "Irán", "Corea del Sur", "Australia", "Arabia Saudita", 
-    "Qatar", "Irak", "Jordania", "Uzbekistán",
+    "Qatar", "Jordania", "Uzbekistán",
     
     // CAF (África)
     "Marruecos", "Senegal", "Egipto", "Costa de Marfil", "Túnez", 
     "Argelia", "Sudáfrica", "Ghana", "Cabo Verde",
     
     // CONCACAF (Norte, Centroamérica y Caribe)
-    "Panamá", "Haití", "Curazao",
+    "Canadá", "Estados Unidos", "México", "Panamá", "Haití", "Curazao",
     
     // OFC (Oceanía)
     "Nueva Zelanda"
@@ -35,12 +33,15 @@ const FRASES = [
   "Estoy seguro que [PAIS] decepciona...",
   "Mucho análisis, pero terminás rogando que [PAIS] meta un gol de rebote.",
   "Ojo con el 9 de [PAIS].",
-  "¿Vas a dejar que te gane el que apostó a [PAIS] campeón?",
-  "Demostrá que no sos el que puso a [PAIS] en la final.",
+  "¿Y si la pega el que apostó a [PAIS] campeón?",
+  "Demostrá que intuís mejor que el que puso a [PAIS] en la final.",
   "El verdadero 'experto' siempre pone a [PAIS] en octavos.",
   "Si [PAIS] pasa de fase, me retiro del fútbol.",
   "Esa fé ciega en [PAIS] te va a arruinar el Prode.",
   "Llega a ganar el asado por pegarla con [PAIS] tenés que cerrar el estadio.",
+  "Burrada histórica confiar en [PAIS].",
+  "Lamine Yamal / [PAIS] en la final? QUE MAAAANDAAANNN.",
+  "Sí, capaz [PAIS] pecheó pero Chile ni jugó.",
 ];
 
 export default function DynamicHeroTitle() {

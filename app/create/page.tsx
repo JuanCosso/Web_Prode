@@ -65,7 +65,7 @@ export default function CreateRoomPage() {
   return (
     <main className="relative min-h-screen overflow-hidden text-white">
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-cover bg-center scale-105" style={{ backgroundImage: "url('/img/wallpaper.webp')" }} />
+        <div className="absolute inset-0 bg-cover bg-center scale-105" style={{ backgroundImage: "url('/img/LogoProde.webp')" }} />
         <div className="absolute inset-0 backdrop-blur-lg bg-slate-950/55" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/20 to-black/65" />
       </div>

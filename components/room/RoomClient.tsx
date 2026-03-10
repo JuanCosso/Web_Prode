@@ -56,6 +56,17 @@ const TEAM_TO_CODE: Record<string, string> = {
   "Costa Rica": "cr", "Perú": "pe", "Chile": "cl", "Bolivia": "bo",
   "Paraguay": "py", "Venezuela": "ve", "Honduras": "hn", "Panamá": "pa",
   "Jamaica": "jm", "El Salvador": "sv", "Nueva Zelanda": "nz", "Eslovaquia": "sk",
+  "Haití": "ht",
+  "Escocia": "gb-sct",
+  "Curazao": "cw",
+  "Costa de Marfil": "ci",
+  "Egipto": "eg",
+  "Cabo Verde": "cv",
+  "Noruega": "no",
+  "Austria": "at",
+  "Jordania": "jo",
+  "Argelia": "dz",
+  "Uzbekistán": "uz",
 };
 function flagCodeFor(t: string) { return TEAM_TO_CODE[t] ?? null; }
 function Flag({ code, alt }: { code: string | null; alt: string }) {
@@ -489,6 +500,19 @@ export default function RoomClient({
     router.push("/");
   }
 
+  async function leaveRoom() {
+    if (!confirm("¿Salir de la sala? Tus predicciones se conservarán pero ya no aparecerás en el ranking.")) return;
+    const res = await fetch(`/api/rooms/${room.id}/members/me`, { method: "DELETE" });
+    if (res.ok) {
+      router.push("/");
+    } else {
+      const data = await res.json().catch(() => ({}));
+      alert(data?.error === "OWNER_CANNOT_LEAVE"
+        ? "El Owner no puede salir. Podés eliminar la sala si ya no la necesitás."
+        : "Error al salir de la sala.");
+    }
+  }
+
   const groups = useMemo(() => {
     if (activeStage !== "GROUP") return [];
     const map = new Map<string, Match[]>();
@@ -784,7 +808,7 @@ export default function RoomClient({
   return (
     <main className="relative min-h-screen overflow-hidden text-white">
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/img/wallpaper.webp')" }} />
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/img/LogoProde.webp')" }} />
         <div className="absolute inset-0 bg-slate-950/75" />
       </div>
 
@@ -845,6 +869,12 @@ export default function RoomClient({
                   className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50">
                   {saving ? "Guardando..." : "Guardar predicciones"}
                 </button>
+                {!isOwner && (
+                  <button onClick={leaveRoom}
+                    className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-400 transition hover:bg-red-500/20">
+                    Salir de la sala
+                  </button>
+                )}
                 {isOwner && (
                   <button onClick={deleteRoom}
                     className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-400 transition hover:bg-red-500/20">

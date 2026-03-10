@@ -22,32 +22,24 @@ export default async function Home() {
       <div className="absolute inset-0">
         <div
           className="absolute inset-0 bg-cover bg-center scale-105"
-          style={{ backgroundImage: "url('/img/wallpaper.webp')" }}
+          style={{ backgroundImage: "url('/img/LogoProde.webp')" }}
         />
         <div className="absolute inset-0 bg-slate-950/65" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/15 to-black/70" />
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }}
-        />
       </div>
 
       {/* Header */}
       <header className="relative z-10 border-b border-white/[0.07]">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/12 border border-white/15 backdrop-blur overflow-hidden group-hover:bg-white/18 transition">
-              <span className="text-lg">⚽</span>
-            </div>
-            <span className="text-sm font-semibold tracking-wide hidden sm:block">
-              Prode Mundial 2026
-            </span>
-            <span className="text-sm font-semibold tracking-wide sm:hidden">
-              Prode 2026
-            </span>
-          </Link>
+        <Link href="/" className="flex items-center group">
+          <img
+            src="/img/IconoProdeH.webp"
+            alt="Logo"
+            width={908}
+            height={161}
+            className="h-10 w-auto object-contain"
+          />
+        </Link>
 
           <div className="flex items-center gap-2">
             <Link
