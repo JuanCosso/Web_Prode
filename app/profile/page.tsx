@@ -9,7 +9,10 @@ export default async function ProfilePage() {
   const rooms = await prisma.room.findMany({
     where: { members: { some: { userId: me.id, status: "ACTIVE" } } },
     orderBy: { createdAt: "desc" },
-    select: { id: true, name: true, code: true, editPolicy: true, createdAt: true },
+    select: {
+      id: true, name: true, code: true, editPolicy: true, createdAt: true,
+      _count: { select: { members: { where: { status: "ACTIVE" } } } },
+    },
     take: 50,
   });
 
@@ -40,26 +43,47 @@ export default async function ProfilePage() {
 
           {/* Mis partidas */}
           <div className="mt-8">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-3">Mis partidas</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-white/40">Mis partidas</h2>
+              {rooms.length > 0 && (
+                <Link href="/me" className="text-xs text-white/40 hover:text-white/70 transition">
+                  Ver todas →
+                </Link>
+              )}
+            </div>
+
             {rooms.length === 0 ? (
               <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-sm text-white/40 backdrop-blur">
                 Todavía no estás en ninguna sala.
               </div>
             ) : (
-              <div className="flex flex-col gap-2">
-                {rooms.map((r) => (
-                  <Link
-                    key={r.id}
-                    href={`/room/${r.id}`}
-                    className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 backdrop-blur transition hover:bg-white/10 group"
-                  >
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold">{r.name}</div>
-                      <div className="mt-0.5 text-xs text-white/35 font-mono">{r.code}</div>
-                    </div>
-                    <span className="ml-3 text-white/30 group-hover:text-white/60 transition shrink-0 text-sm">→</span>
-                  </Link>
-                ))}
+              <div className="flex flex-col gap-3">
+                {rooms.map((r) => {
+                  const memberCount = r._count.members;
+                  return (
+                    <Link
+                      key={r.id}
+                      href={`/room/${r.id}`}
+                      className="group flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur transition hover:bg-white/8 hover:border-white/18"
+                    >
+                      {/* Info sala */}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate text-sm font-semibold">{r.name}</span>
+                          <span className="shrink-0 rounded-md border border-white/15 px-1.5 py-px font-mono text-[10px] text-white/40">
+                            {r.code}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex items-center gap-3 text-xs text-white/40">
+                          <span>{memberCount} {memberCount === 1 ? "jugador" : "jugadores"}</span>
+                          <span>·</span>
+                          <span>{r.editPolicy === "STRICT_PER_MATCH" ? "Mundial" : "Desafío"}</span>
+                        </div>
+                      </div>
+                      <span className="ml-3 text-white/25 group-hover:text-white/50 transition shrink-0 text-sm">→</span>
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </div>

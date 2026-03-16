@@ -2,7 +2,8 @@ import Link from "next/link";
 import { prisma } from "@/src/lib/prisma";
 import { getCurrentUser } from "@/src/lib/auth-user";
 import { AuthButton } from "@/components/auth/AuthButton";
-import DynamicHeroTitle from "@/components/DynamicHeroTitle"; // Asumo que lo crearás en este path, o podés ponerlo en este mismo archivo abajo.
+import DynamicHeroTitle from "@/components/DynamicHeroTitle";
+import { MobileMenu } from "@/components/MobileMenu";
 
 export default async function Home() {
   const me = await getCurrentUser();
@@ -29,26 +30,34 @@ export default async function Home() {
       </div>
 
       {/* Header */}
-      <header className="relative z-10 border-b border-white/[0.07]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-        <Link href="/" className="flex items-center group">
-          <img
-            src="/img/IconoProdeH.webp"
-            alt="Logo"
-            width={908}
-            height={161}
-            className="h-10 w-auto object-contain"
-          />
-        </Link>
+      <header className="relative z-[100] border-b border-white/[0.07] overflow-visible">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6 overflow-visible">
+          {/* Logo */}
+          <Link href="/" className="flex items-center shrink-0">
+            <img
+              src="/img/IconoProdeH.webp"
+              alt="Logo"
+              width={908}
+              height={161}
+              className="h-8 w-auto object-contain sm:h-10"
+              style={{ maxWidth: 180 }}
+            />
+          </Link>
 
-          <div className="flex items-center gap-2">
+          {/* Desktop: nombre completo + AuthButton */}
+          <div className="hidden sm:flex items-center gap-2 shrink-0">
             <Link
               href="/profile"
-              className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-medium backdrop-blur transition hover:border-white/30 hover:bg-white/15"
+              className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-medium backdrop-blur transition hover:border-white/30 hover:bg-white/15 whitespace-nowrap"
             >
               {me?.displayName?.trim() ? me.displayName : "Perfil"}
             </Link>
             <AuthButton />
+          </div>
+
+          {/* Mobile: hamburguesa */}
+          <div className="flex sm:hidden overflow-visible">
+            <MobileMenu displayName={me?.displayName ?? null} />
           </div>
         </div>
       </header>

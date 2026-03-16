@@ -852,8 +852,8 @@ export default function RoomClient({
                 </div>
               </div>
 
-              {/* Lado derecho: botones */}
-              <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
+              {/* Lado derecho: botones — en mobile se oculta, los botones van abajo */}
+              <div className="hidden sm:flex flex-wrap items-center justify-end gap-2 shrink-0">
                 {(canKick || canModerate) && room.accessType === "CLOSED" && (
                   <button onClick={() => setShowPendingModal(true)}
                     className="relative rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold backdrop-blur transition hover:bg-white/15">
@@ -882,6 +882,37 @@ export default function RoomClient({
                   </button>
                 )}
               </div>
+            </div>
+
+            {/* Botones mobile — solo visible en sm: hidden */}
+            <div className="flex sm:hidden flex-wrap gap-2">
+              {(canKick || canModerate) && room.accessType === "CLOSED" && (
+                <button onClick={() => setShowPendingModal(true)}
+                  className="relative rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold backdrop-blur transition hover:bg-white/15">
+                  Solicitudes
+                  {pendingMembers.length > 0 && (
+                    <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-yellow-400 text-slate-900 text-[11px] font-bold w-5 h-5">
+                      {pendingMembers.length}
+                    </span>
+                  )}
+                </button>
+              )}
+              <button onClick={saveAll} disabled={saving}
+                className="flex-1 rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm transition disabled:opacity-50">
+                {saving ? "Guardando..." : "Guardar predicciones"}
+              </button>
+              {!isOwner && (
+                <button onClick={leaveRoom}
+                  className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-400 transition hover:bg-red-500/20">
+                  Salir
+                </button>
+              )}
+              {isOwner && (
+                <button onClick={deleteRoom}
+                  className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-400 transition hover:bg-red-500/20">
+                  Eliminar
+                </button>
+              )}
             </div>
 
             {/* Chips jugadores */}
