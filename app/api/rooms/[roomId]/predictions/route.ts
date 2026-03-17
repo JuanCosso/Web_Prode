@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
 import { getCurrentUser } from "@/src/lib/auth-user";
+import { broadcastPreds } from "@/src/lib/sse";
 
 type PredictionInput = {
   matchId: string;
@@ -67,21 +68,6 @@ export async function POST(
   const matchById = new Map(matches.map((m) => [m.id, m]));
   const now = new Date();
 
-  // ─── Lógica de lock según editPolicy ─────────────────────────────────────
-  //
-  // STRICT_PER_MATCH ("Mundial"):
-  //   - Cada partido se bloquea individualmente cuando arranca su kickoff.
-  //   - Aplica igual para GROUP y KO.
-  //
-  // ALLOW_UNTIL_ROUND_CLOSE ("Desafío"):
-  //   - GROUP: toda la fase de grupos se bloquea cuando arranca el primer partido
-  //     del grupo (o de la fase entera, según el modelo actual).
-  //   - KO por stage: cada ronda (R32, R16, QF, SF, FINAL) se bloquea cuando
-  //     arranca el PRIMER partido de ESE stage.
-  //   - Es decir: podés editar R16 hasta que empiece el primer partido de R16,
-  //     independientemente de si ya cerraste R32.
-
-  // Pre-calculamos el kickoff más temprano por stage para modo Desafío
   const earliestKickoffByStage = new Map<string, Date>();
   if (room.editPolicy === "ALLOW_UNTIL_ROUND_CLOSE") {
     for (const m of matches) {
@@ -148,7 +134,37 @@ export async function POST(
     )
   );
 
-  return NextResponse.json({ ok: true, saved: allowed.length, serverNow: now.toISOString() });
+  if (allowed.length > 0) {
+         // Construir payload para SSE con las predicciones guardadas
+         const savedPreds = await prisma.prediction.findMany({
+           where: {
+             roomId,
+             userId: me.id,
+             matchId: { in: allowed.map((p) => p.matchId) },
+           },
+           select: {
+             matchId: true,
+             predHomeGoals: true,
+             predAwayGoals: true,
+             predPenWinner: true,
+            user: { select: { displayName: true } },
+           },
+         });
+    
+         broadcastPreds(
+           roomId,
+           savedPreds.map((p) => ({
+             matchId: p.matchId,
+             userId: me.id,
+             displayName: p.user.displayName,
+             h: p.predHomeGoals,
+             a: p.predAwayGoals,
+             penWinner: p.predPenWinner ?? null,
+           }))
+         );
+       }
+    
+       return NextResponse.json({ ok: true, saved: allowed.length, serverNow: now.toISOString() });
 }
 
 // ✅ GET: predicciones de todos los miembros para un stage dado

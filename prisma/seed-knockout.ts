@@ -14,18 +14,6 @@ function etToUtcDate(dateISO: string, timeET: string): Date {
   return d;
 }
 
-// ─── Estructura del Mundial 2026 ────────────────────────────────────────────
-// 32 equipos → 16 partidos en R32 (dieciseisavos)
-// 16 → 8 partidos en R16 (octavos)
-//  8 → 4 partidos en QF  (cuartos)
-//  4 → 2 partidos en SF  (semis)
-//  2 → 1 final + 1 tercer puesto
-//
-// Llave oficial FIFA 2026 (sorteo pendiente, usamos los cruces confirmados):
-// 1A vs 2B, 1C vs 2D, 1E vs 2F, 1G vs 2H
-// 1I vs 2J, 1K vs 2L, 1B vs 2A, 1D vs 2C
-// etc. → los placeholders son suficientes para el prode
-
 const knockoutMatches = [
   // ─── R32 (16avos de final) ─────────────────────────────────────────────
   // Fechas estimadas: 1–4 julio 2026
