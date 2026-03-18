@@ -1,19 +1,19 @@
-// REEMPLAZAR en components/room/constants.ts
-// (o donde vivan STAGE_ORDER y STAGE_LABELS en tu proyecto)
+// components/room/constants.ts
 
-export const KO_STAGES = new Set(["R32", "R16", "QF", "SF", "TPP", "FINAL"]);
+export const KO_STAGES = new Set([
+  "PO_SF", "PO_F",                          // repechaje — pueden ir a penales
+  "R32", "R16", "QF", "SF", "TPP", "FINAL", // eliminatoria del Mundial
+]);
 
-// Los playoffs van primero (cronológicamente son en marzo, antes del Mundial)
 export const STAGE_ORDER = [
-  "PO_SF",    // Repechaje semifinales (26 mar)
-  "PO_F",     // Repechaje finales     (31 mar)
+  "PO_SF", "PO_F",
   "GROUP",
   "R32", "R16", "QF", "SF", "TPP", "FINAL",
 ];
 
 export const STAGE_LABELS: Record<string, string> = {
-  PO_SF:  "Repechaje - Semis",
-  PO_F:   "Repechaje - Finales",
+  PO_SF:  "Repechaje · Semis",
+  PO_F:   "Repechaje · Final",
   GROUP:  "Grupos",
   R32:    "16avos",
   R16:    "Octavos",

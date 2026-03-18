@@ -16,12 +16,12 @@ type Body = {
 };
 
 // Stages KO donde aplica lock por fase (en Desafío) en lugar de lock por partido
-const KO_STAGES = ["R32", "R16", "QF", "SF", "TPP", "FINAL"] as const;
+const KO_STAGES = ["PO_SF", "PO_F", "R32", "R16", "QF", "SF", "TPP", "FINAL"] as const;
 type KnockoutStage = (typeof KO_STAGES)[number];
-
 function isKnockoutStage(stage: string): stage is KnockoutStage {
   return KO_STAGES.includes(stage as KnockoutStage);
 }
+ 
 
 // ✅ POST: guarda predicciones respetando locks server-side
 export async function POST(
