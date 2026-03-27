@@ -19,8 +19,9 @@ type Match = {
   city: string;
 };
 
-const STAGE_ORDER = ["GROUP", "R32", "R16", "QF", "SF", "TPP", "FINAL"];
+const STAGE_ORDER = ["PO_SF", "PO_F", "GROUP", "R32", "R16", "QF", "SF", "TPP", "FINAL"];
 const STAGE_LABELS: Record<string, string> = {
+  PO_SF: "Repechaje · Semis", PO_F: "Repechaje · Final",
   GROUP: "Fase de Grupos", R32: "16avos de Final", R16: "Octavos de Final",
   QF: "Cuartos de Final", SF: "Semifinales", TPP: "3° y 4° puesto", FINAL: "Final",
 };
