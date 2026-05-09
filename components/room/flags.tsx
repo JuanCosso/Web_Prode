@@ -4,7 +4,7 @@ export const TEAM_TO_CODE: Record<string, string> = {
     "Países Bajos": "nl", "Bélgica": "be", "Uruguay": "uy", "Colombia": "co",
     "México": "mx", "Sudáfrica": "za", "Corea del Sur": "kr", "Japón": "jp",
     "Marruecos": "ma", "Senegal": "sn", "Ghana": "gh", "Nigeria": "ng",
-    "Estados Unidos": "us", "Canadá": "ca", "Australia": "au", "Croatia": "hr",
+    "Estados Unidos": "us", "Canadá": "ca", "Australia": "au", "Croacia": "hr",
     "Dinamarca": "dk", "Suecia": "se", "Suiza": "ch", "Polonia": "pl",
     "Serbia": "rs", "Ecuador": "ec", "Qatar": "qa", "Arabia Saudita": "sa",
     "Irán": "ir", "Túnez": "tn", "Camerún": "cm", "Gales": "gb-wls",
