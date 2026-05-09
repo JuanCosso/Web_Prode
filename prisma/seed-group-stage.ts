@@ -29,19 +29,19 @@ type SeedMatch = {
 const matches: SeedMatch[] = [
   // Grupo A
   { stage:"GROUP", group:"A", matchday:1, dateISO:"2026-06-11", timeET:"15:00", city:"Ciudad de México", homeTeam:"México", awayTeam:"Sudáfrica" },
-  { stage:"GROUP", group:"A", matchday:1, dateISO:"2026-06-11", timeET:"22:00", city:"Guadalajara", homeTeam:"Corea del Sur", awayTeam:"Ganador Playoff UEFA D" },
-  { stage:"GROUP", group:"A", matchday:2, dateISO:"2026-06-18", timeET:"12:00", city:"Atlanta", homeTeam:"Ganador Playoff UEFA D", awayTeam:"Sudáfrica" },
+  { stage:"GROUP", group:"A", matchday:1, dateISO:"2026-06-11", timeET:"22:00", city:"Guadalajara", homeTeam:"Corea del Sur", awayTeam:"República Checa" },
+  { stage:"GROUP", group:"A", matchday:2, dateISO:"2026-06-18", timeET:"12:00", city:"Atlanta", homeTeam:"República Checa", awayTeam:"Sudáfrica" },
   { stage:"GROUP", group:"A", matchday:2, dateISO:"2026-06-18", timeET:"21:00", city:"Guadalajara", homeTeam:"México", awayTeam:"Corea del Sur" },
-  { stage:"GROUP", group:"A", matchday:3, dateISO:"2026-06-24", timeET:"21:00", city:"Ciudad de México", homeTeam:"Ganador Playoff UEFA D", awayTeam:"México" },
+  { stage:"GROUP", group:"A", matchday:3, dateISO:"2026-06-24", timeET:"21:00", city:"Ciudad de México", homeTeam:"República Checa", awayTeam:"México" },
   { stage:"GROUP", group:"A", matchday:3, dateISO:"2026-06-24", timeET:"21:00", city:"Monterrey", homeTeam:"Sudáfrica", awayTeam:"Corea del Sur" },
 
   // Grupo B
-  { stage:"GROUP", group:"B", matchday:1, dateISO:"2026-06-12", timeET:"15:00", city:"Toronto", homeTeam:"Canadá", awayTeam:"Ganador Playoff UEFA A" },
+  { stage:"GROUP", group:"B", matchday:1, dateISO:"2026-06-12", timeET:"15:00", city:"Toronto", homeTeam:"Canadá", awayTeam:"Bosnia" },
   { stage:"GROUP", group:"B", matchday:1, dateISO:"2026-06-13", timeET:"15:00", city:"San Francisco", homeTeam:"Qatar", awayTeam:"Suiza" },
-  { stage:"GROUP", group:"B", matchday:2, dateISO:"2026-06-18", timeET:"15:00", city:"Los Ángeles", homeTeam:"Suiza", awayTeam:"Ganador Playoff UEFA A" },
+  { stage:"GROUP", group:"B", matchday:2, dateISO:"2026-06-18", timeET:"15:00", city:"Los Ángeles", homeTeam:"Suiza", awayTeam:"Bosnia" },
   { stage:"GROUP", group:"B", matchday:2, dateISO:"2026-06-18", timeET:"18:00", city:"Vancouver", homeTeam:"Canadá", awayTeam:"Qatar" },
   { stage:"GROUP", group:"B", matchday:3, dateISO:"2026-06-24", timeET:"15:00", city:"Vancouver", homeTeam:"Suiza", awayTeam:"Canadá" },
-  { stage:"GROUP", group:"B", matchday:3, dateISO:"2026-06-24", timeET:"15:00", city:"Seattle", homeTeam:"Ganador Playoff UEFA A", awayTeam:"Qatar" },
+  { stage:"GROUP", group:"B", matchday:3, dateISO:"2026-06-24", timeET:"15:00", city:"Seattle", homeTeam:"Bosnia", awayTeam:"Qatar" },
 
   // Grupo C
   { stage:"GROUP", group:"C", matchday:1, dateISO:"2026-06-13", timeET:"18:00", city:"Nueva York/Nueva Jersey", homeTeam:"Brasil", awayTeam:"Marruecos" },
@@ -53,10 +53,10 @@ const matches: SeedMatch[] = [
 
   // Grupo D
   { stage:"GROUP", group:"D", matchday:1, dateISO:"2026-06-12", timeET:"21:00", city:"Los Ángeles", homeTeam:"Estados Unidos", awayTeam:"Paraguay" },
-  { stage:"GROUP", group:"D", matchday:1, dateISO:"2026-06-13", timeET:"00:00", city:"Vancouver", homeTeam:"Australia", awayTeam:"Ganador Playoff UEFA C" },
-  { stage:"GROUP", group:"D", matchday:2, dateISO:"2026-06-19", timeET:"00:00", city:"San Francisco", homeTeam:"Ganador Playoff UEFA C", awayTeam:"Paraguay" },
+  { stage:"GROUP", group:"D", matchday:1, dateISO:"2026-06-13", timeET:"00:00", city:"Vancouver", homeTeam:"Australia", awayTeam:"Turquía" },
+  { stage:"GROUP", group:"D", matchday:2, dateISO:"2026-06-19", timeET:"00:00", city:"San Francisco", homeTeam:"Turquía", awayTeam:"Paraguay" },
   { stage:"GROUP", group:"D", matchday:2, dateISO:"2026-06-19", timeET:"15:00", city:"Seattle", homeTeam:"Estados Unidos", awayTeam:"Australia" },
-  { stage:"GROUP", group:"D", matchday:3, dateISO:"2026-06-25", timeET:"22:00", city:"Los Ángeles", homeTeam:"Ganador Playoff UEFA C", awayTeam:"Estados Unidos" },
+  { stage:"GROUP", group:"D", matchday:3, dateISO:"2026-06-25", timeET:"22:00", city:"Los Ángeles", homeTeam:"Turquía", awayTeam:"Estados Unidos" },
   { stage:"GROUP", group:"D", matchday:3, dateISO:"2026-06-25", timeET:"22:00", city:"San Francisco", homeTeam:"Paraguay", awayTeam:"Australia" },
 
   // Grupo E
@@ -69,10 +69,10 @@ const matches: SeedMatch[] = [
 
   // Grupo F
   { stage:"GROUP", group:"F", matchday:1, dateISO:"2026-06-14", timeET:"16:00", city:"Dallas", homeTeam:"Países Bajos", awayTeam:"Japón" },
-  { stage:"GROUP", group:"F", matchday:1, dateISO:"2026-06-14", timeET:"22:00", city:"Monterrey", homeTeam:"Ganador Playoff UEFA B", awayTeam:"Túnez" },
-  { stage:"GROUP", group:"F", matchday:2, dateISO:"2026-06-20", timeET:"13:00", city:"Houston", homeTeam:"Países Bajos", awayTeam:"Ganador Playoff UEFA B" },
+  { stage:"GROUP", group:"F", matchday:1, dateISO:"2026-06-14", timeET:"22:00", city:"Monterrey", homeTeam:"Suecia", awayTeam:"Túnez" },
+  { stage:"GROUP", group:"F", matchday:2, dateISO:"2026-06-20", timeET:"13:00", city:"Houston", homeTeam:"Países Bajos", awayTeam:"Suecia" },
   { stage:"GROUP", group:"F", matchday:2, dateISO:"2026-06-20", timeET:"00:00", city:"(por confirmar)", homeTeam:"Túnez", awayTeam:"Japón" },
-  { stage:"GROUP", group:"F", matchday:3, dateISO:"2026-06-25", timeET:"19:00", city:"Dallas", homeTeam:"Japón", awayTeam:"Ganador Playoff UEFA B" },
+  { stage:"GROUP", group:"F", matchday:3, dateISO:"2026-06-25", timeET:"19:00", city:"Dallas", homeTeam:"Japón", awayTeam:"Suecia" },
   { stage:"GROUP", group:"F", matchday:3, dateISO:"2026-06-25", timeET:"19:00", city:"Kansas City", homeTeam:"Túnez", awayTeam:"Países Bajos" },
 
   // Grupo G
@@ -93,11 +93,11 @@ const matches: SeedMatch[] = [
 
   // Grupo I
   { stage:"GROUP", group:"I", matchday:1, dateISO:"2026-06-16", timeET:"15:00", city:"Nueva York/Nueva Jersey", homeTeam:"Francia", awayTeam:"Senegal" },
-  { stage:"GROUP", group:"I", matchday:1, dateISO:"2026-06-16", timeET:"18:00", city:"Boston", homeTeam:"Ganador Repechaje 1", awayTeam:"Noruega" },
-  { stage:"GROUP", group:"I", matchday:2, dateISO:"2026-06-22", timeET:"17:00", city:"Filadelfia", homeTeam:"Francia", awayTeam:"Ganador Repechaje 1" },
+  { stage:"GROUP", group:"I", matchday:1, dateISO:"2026-06-16", timeET:"18:00", city:"Boston", homeTeam:"Irak", awayTeam:"Noruega" },
+  { stage:"GROUP", group:"I", matchday:2, dateISO:"2026-06-22", timeET:"17:00", city:"Filadelfia", homeTeam:"Francia", awayTeam:"Irak" },
   { stage:"GROUP", group:"I", matchday:2, dateISO:"2026-06-22", timeET:"20:00", city:"Nueva York/Nueva Jersey", homeTeam:"Noruega", awayTeam:"Senegal" },
   { stage:"GROUP", group:"I", matchday:3, dateISO:"2026-06-26", timeET:"15:00", city:"Boston", homeTeam:"Noruega", awayTeam:"Francia" },
-  { stage:"GROUP", group:"I", matchday:3, dateISO:"2026-06-26", timeET:"15:00", city:"Toronto", homeTeam:"Senegal", awayTeam:"Ganador Repechaje 1" },
+  { stage:"GROUP", group:"I", matchday:3, dateISO:"2026-06-26", timeET:"15:00", city:"Toronto", homeTeam:"Senegal", awayTeam:"Irak" },
 
   // Grupo J
   { stage:"GROUP", group:"J", matchday:1, dateISO:"2026-06-16", timeET:"21:00", city:"Kansas City", homeTeam:"Argentina", awayTeam:"Argelia" },
@@ -108,12 +108,12 @@ const matches: SeedMatch[] = [
   { stage:"GROUP", group:"J", matchday:3, dateISO:"2026-06-27", timeET:"22:00", city:"Dallas", homeTeam:"Jordania", awayTeam:"Argentina" },
 
   // Grupo K
-  { stage:"GROUP", group:"K", matchday:1, dateISO:"2026-06-17", timeET:"13:00", city:"Houston", homeTeam:"Portugal", awayTeam:"Ganador repechaje 2" },
+  { stage:"GROUP", group:"K", matchday:1, dateISO:"2026-06-17", timeET:"13:00", city:"Houston", homeTeam:"Portugal", awayTeam:"RD Congo" },
   { stage:"GROUP", group:"K", matchday:1, dateISO:"2026-06-17", timeET:"22:00", city:"Ciudad de México", homeTeam:"Uzbekistán", awayTeam:"Colombia" },
   { stage:"GROUP", group:"K", matchday:2, dateISO:"2026-06-23", timeET:"13:00", city:"Houston", homeTeam:"Portugal", awayTeam:"Uzbekistán" },
-  { stage:"GROUP", group:"K", matchday:2, dateISO:"2026-06-23", timeET:"22:00", city:"Guadalajara", homeTeam:"Colombia", awayTeam:"Ganador repechaje 2" },
+  { stage:"GROUP", group:"K", matchday:2, dateISO:"2026-06-23", timeET:"22:00", city:"Guadalajara", homeTeam:"Colombia", awayTeam:"RD Congo" },
   { stage:"GROUP", group:"K", matchday:3, dateISO:"2026-06-27", timeET:"19:30", city:"Miami", homeTeam:"Colombia", awayTeam:"Portugal" },
-  { stage:"GROUP", group:"K", matchday:3, dateISO:"2026-06-27", timeET:"19:30", city:"Atlanta", homeTeam:"Ganador repechaje 2", awayTeam:"Uzbekistán" },
+  { stage:"GROUP", group:"K", matchday:3, dateISO:"2026-06-27", timeET:"19:30", city:"Atlanta", homeTeam:"RD Congo", awayTeam:"Uzbekistán" },
 
   // Grupo L
   { stage:"GROUP", group:"L", matchday:1, dateISO:"2026-06-17", timeET:"16:00", city:"Dallas", homeTeam:"Inglaterra", awayTeam:"Croacia" },

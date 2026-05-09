@@ -45,7 +45,7 @@ const playoffMatches = [
   { stage:"PO_F", group:"UEFA-D", matchday:1, date:"2026-03-31", time:"20:45", tz:"CET", city:"por confirmar", homeTeam:"Suecia",  awayTeam:"Polonia",  fifaId:"PO-UEFA-D-F" },
 
   // ── INTER-CONFEDERATION FINALES (31 mar 2026) ─────────────────────────────
-  { stage:"PO_F", group:"INTER-2", matchday:1, date:"2026-03-31", time:"18:00", tz:"EDT", city:"Guadalajara", homeTeam:"RD Congo", awayTeam:"NCL/JAM", fifaId:"PO-INTER-2-F" },
+  { stage:"PO_F", group:"INTER-2", matchday:1, date:"2026-03-31", time:"18:00", tz:"EDT", city:"Guadalajara", homeTeam:"RD Congo", awayTeam:"Jamaica", fifaId:"PO-INTER-2-F" },
   { stage:"PO_F", group:"INTER-1", matchday:1, date:"2026-03-31", time:"20:00", tz:"EDT", city:"Monterrey",   homeTeam:"Irak",       awayTeam:"Bolivia", fifaId:"PO-INTER-1-F" },
 ];
 
@@ -61,13 +61,6 @@ async function main() {
     count++;
   }
   console.log(`✅ ${count} partidos de repechaje insertados/actualizados`);
-  console.log(`\n  PO_SF: 10 partidos | PO_F: 6 partidos`);
-  console.log(`\n  UEFA-A: ITA/NIR vs GAL/BIH  → Grupo B`);
-  console.log(`  UEFA-B: TUR/RUM vs SVK/KOS  → Grupo F`);
-  console.log(`  UEFA-C: DIN/MKD vs CHE/IRL  → Grupo D`);
-  console.log(`  UEFA-D: UCR/SUE vs POL/ALB  → Grupo A`);
-  console.log(`  INTER-2: R.D.Congo vs NCL/JAM → Grupo K`);
-  console.log(`  INTER-1: Irak vs BOL/SUR      → Grupo I`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); }).finally(() => prisma.$disconnect());
