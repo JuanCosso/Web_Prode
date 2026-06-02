@@ -3,6 +3,7 @@
 import { createPortal } from "react-dom";
 import type { Me } from "./types";
 import type { PlayerStat } from "./stats";
+import { PENALTY_DIST } from "./constants";
 
 type Col = {
   label: string;
