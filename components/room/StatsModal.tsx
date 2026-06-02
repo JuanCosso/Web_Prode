@@ -17,12 +17,12 @@ const COLS: Col[] = [
   { label: "Efectividad",  sublabel: "pts / máx posible",          key: "effectivenessScore", format: v => `${v}%`,      best: "max" },
   { label: "Exactos",      sublabel: "% marcadores exactos",       key: "exactRatio",         format: v => `${v}%`,      best: "max" },
   { label: "Precisión",    sublabel: "dist. prom. al resultado",   key: "avgDistance",        format: v => `${v}`,       best: "min" },
-  { label: "Locales",      sublabel: "efect. apostando local",     key: "homeEffectiveness",  format: v => `${v}%`,      best: "max" },
-  { label: "Visitantes",   sublabel: "efect. apostando visitante", key: "awayEffectiveness",  format: v => `${v}%`,      best: "max" },
+  { label: "Efectiv. Local",   sublabel: "cuando apostó al local", key: "homeEffectiveness",  format: v => `${v}%`,      best: "max" },
+  { label: "Efectiv. Visitante", sublabel: "cuando apostó al visitante", key: "awayEffectiveness",  format: v => `${v}%`,      best: "max" },
   { label: "Pts/partido",  sublabel: "promedio por predicho",      key: "avgPointsPerMatch",  format: v => v.toFixed(2), best: "max" },
   { label: "Cobertura",    sublabel: "% partidos predichos",       key: "coverage",           format: v => `${v}%`,      best: "max" },
-  { label: "Racha máx.",   sublabel: "partidos seguidos con pts",  key: "maxStreak",          format: v => `${v}`,       best: "max" },
-  { label: "Peor racha",   sublabel: "partidos seguidos sin pts",  key: "worstStreak",        format: v => `${v}`,       best: "min" },
+  { label: "Racha máx.",   sublabel: "partidos seguidos CON pts",  key: "maxStreak",          format: v => `${v}`,       best: "max" },
+  { label: "Peor racha",   sublabel: "partidos seguidos SIN pts",  key: "worstStreak",        format: v => `${v}`,       best: "min" },
 ];
 
 export function StatsModal({

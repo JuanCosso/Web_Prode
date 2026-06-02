@@ -10,17 +10,17 @@ export type PlayerStat = {
   exactRatio: number;
   /** distancia prom al resultado; no predichos = PENALTY_DIST */
   avgDistance: number;
-  /** % efectividad apostando local */
+  /** % efectividad cuando apostó a que gane el local (0-100) */
   homeEffectiveness: number;
-  /** % efectividad apostando visitante */
+  /** % efectividad cuando apostó a que gane el visitante (0-100) */
   awayEffectiveness: number;
   /** pts promedio por partido predicho */
   avgPointsPerMatch: number;
   /** % partidos predichos sobre total jugados */
   coverage: number;
-  /** racha máxima de partidos consecutivos con puntos */
+  /** racha máxima de partidos consecutivos CON puntos */
   maxStreak: number;
-  /** peor racha: máx partidos seguidos sin sumar */
+  /** peor racha: máximo partidos seguidos SIN sumar puntos */
   worstStreak: number;
   playedPreds: number;
   totalPlayed: number;
@@ -76,11 +76,21 @@ export function computePlayerStats(
       else if (po === "A") { awayTotal++; awayCorrect += ptm; }
     }
 
+    // Calcular racha máxima (partidos seguidos CON puntos) y peor racha (SIN puntos)
     let maxStreak = 0, cur = 0;
     let worstStreak = 0, curBad = 0;
     for (const hit of streakBits) {
-      if (hit) { cur++; maxStreak = Math.max(maxStreak, cur); curBad = 0; }
-      else { curBad++; worstStreak = Math.max(worstStreak, curBad); cur = 0; }
+      if (hit) { 
+        // Acertó o fue exacto: suma a racha positiva
+        cur++; 
+        maxStreak = Math.max(maxStreak, cur); 
+        curBad = 0; 
+      } else { 
+        // No acertó ni exacto: suma a racha negativa
+        curBad++; 
+        worstStreak = Math.max(worstStreak, curBad); 
+        cur = 0; 
+      }
     }
 
     const totalPlayed = played.length;

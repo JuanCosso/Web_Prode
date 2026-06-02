@@ -129,7 +129,7 @@ async function main() {
     const m = matches[i];
 
     const kickoffAt = etToUtcDate(m.dateISO, m.timeET);
-    const fifaId = `GROUP-${m.group}-MD${m.matchday}-${String(i + 1).padStart(2, "0")}`;
+    const fifaId = `GROUP-${m.group}-MD${m.matchday}-${String(i).padStart(2, "0")}`;
 
     await prisma.match.upsert({
       where: { fifaId },
