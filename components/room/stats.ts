@@ -18,10 +18,12 @@ export type PlayerStat = {
   avgPointsPerMatch: number;
   /** % partidos predichos sobre total jugados */
   coverage: number;
-  /** racha máxima de partidos consecutivos CON puntos */
+  /** mejor racha: máximo partidos seguidos CON puntos */
   maxStreak: number;
   /** peor racha: máximo partidos seguidos SIN sumar puntos */
   worstStreak: number;
+  /** % acierto en penales (solo partidos con penales) */
+  penaltyAccuracy: number;
   playedPreds: number;
   totalPlayed: number;
 };
@@ -48,6 +50,7 @@ export function computePlayerStats(
     let pts = 0, maxPts = 0, exactHits = 0, playedPreds = 0;
     let totalDist = 0, homeTotal = 0, homeCorrect = 0, awayTotal = 0, awayCorrect = 0;
     const streakBits: boolean[] = [];
+    let penaltyMatches = 0, penaltyCorrect = 0;
 
     for (const m of played) {
       const pred = allPreds.get(`${m.id}__${mb.userId}`);
@@ -74,6 +77,14 @@ export function computePlayerStats(
       const ptm = exact ? 3 : outcomeOk ? 1 : 0;
       if (po === "H") { homeTotal++; homeCorrect += ptm; }
       else if (po === "A") { awayTotal++; awayCorrect += ptm; }
+      
+      // Contar penales si la predicción incluye penales
+      if (m.decidedByPenalties && pred.penWinner) {
+        penaltyMatches++;
+        if (pred.penWinner === m.penWinner) {
+          penaltyCorrect++;
+        }
+      }
     }
 
     // Calcular racha máxima (partidos seguidos CON puntos) y peor racha (SIN puntos)
@@ -110,6 +121,7 @@ export function computePlayerStats(
       coverage: totalPlayed > 0 ? Math.round((playedPreds / totalPlayed) * 1000) / 10 : 0,
       maxStreak,
       worstStreak,
+      penaltyAccuracy: penaltyMatches > 0 ? Math.round((penaltyCorrect / penaltyMatches) * 1000) / 10 : 0,
       playedPreds,
       totalPlayed,
     };

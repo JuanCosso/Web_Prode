@@ -21,8 +21,9 @@ const COLS: Col[] = [
   { label: "Efectiv. Visitante", sublabel: "cuando apostó al visitante", key: "awayEffectiveness",  format: v => `${v}%`,      best: "max" },
   { label: "Pts/partido",  sublabel: "promedio por predicho",      key: "avgPointsPerMatch",  format: v => v.toFixed(2), best: "max" },
   { label: "Cobertura",    sublabel: "% partidos predichos",       key: "coverage",           format: v => `${v}%`,      best: "max" },
-  { label: "Racha máx.",   sublabel: "partidos seguidos CON pts",  key: "maxStreak",          format: v => `${v}`,       best: "max" },
-  { label: "Peor racha",   sublabel: "partidos seguidos SIN pts",  key: "worstStreak",        format: v => `${v}`,       best: "min" },
+  { label: "Mejor racha",   sublabel: "partidos seguidos CON pts",  key: "maxStreak",          format: v => `${v}`,       best: "max" },
+  { label: "Peor racha",   sublabel: "partidos seguidos SIN pts",  key: "worstStreak",        format: v => `${v}`,       best: "max" },
+  { label: "Acierto en penales", sublabel: "% predicciones acertadas", key: "penaltyAccuracy",    format: v => `${v}%`,      best: "max" },
 ];
 
 export function StatsModal({

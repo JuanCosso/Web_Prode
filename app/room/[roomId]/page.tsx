@@ -91,8 +91,11 @@ export default async function RoomPage({
   const pendingMembers = room.members.filter((m) => m.status === MembershipStatus.PENDING);
   const pendingCount = pendingMembers.length;
 
-  // ✅ Traemos TODOS los partidos de todas las fases, ordenados cronológicamente
+  // ✅ Traemos partidos del MUNDIAL (excluyendo repechaje), ordenados cronológicamente
   const matches = await prisma.match.findMany({
+    where: {
+      stage: { notIn: ["PO_SF", "PO_F"] }, // Excluir repechaje, solo partidos del mundial
+    },
     orderBy: [
       { kickoffAt: "asc" },
       { group: "asc" },
