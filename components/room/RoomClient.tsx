@@ -56,6 +56,7 @@ export default function RoomClient({
   }, []);
 
   // ─── Stages ───────────────────────────────────────────────────────────────
+  const TOTAL_WORLD_CUP_MATCHES = 104;
   const playedCount = useMemo(
     () => matches.filter((m) => m.homeGoals !== null && m.awayGoals !== null).length,
     [matches]
@@ -356,7 +357,7 @@ export default function RoomClient({
                     {room.accessType === "CLOSED" ? "Cerrada 🔒" : "Abierta 🔓"}
                   </span>
                   <span>·</span>
-                  <span>Jugados: <span className="text-white">{playedCount}</span>/{matches.length}</span>
+                  <span>Jugados: <span className="text-white">{playedCount}</span>/{TOTAL_WORLD_CUP_MATCHES}</span>
                 </div>
               </div>
 
@@ -574,7 +575,7 @@ export default function RoomClient({
               </div>
 
               {/* Estadísticas */}
-              {playerStats.length > 0 && playedCount > 0 && (() => {
+              {playerStats.length > 0 && (() => {
                 const byEff      = [...playerStats].sort((a, b) => b.effectivenessScore - a.effectivenessScore)[0];
                 const byExact    = [...playerStats].sort((a, b) => b.exactRatio - a.exactRatio)[0];
                 const byDist     = [...playerStats].sort((a, b) => a.avgDistance - b.avgDistance)[0];
@@ -583,18 +584,20 @@ export default function RoomClient({
                 const byPPM      = [...playerStats].sort((a, b) => b.avgPointsPerMatch - a.avgPointsPerMatch)[0];
                 const byCoverage = [...playerStats].sort((a, b) => b.coverage - a.coverage)[0];
                 const byStreak   = [...playerStats].sort((a, b) => b.maxStreak - a.maxStreak)[0];
-                const byWorst    = [...playerStats].sort((a, b) => a.worstStreak - b.worstStreak)[0];
+                const byWorst    = [...playerStats].sort((a, b) => b.worstStreak - a.worstStreak)[0];
+                const byPenalty  = [...playerStats].sort((a, b) => b.penaltyAccuracy - a.penaltyAccuracy)[0];
 
                 const statsRows = [
                   { label: "Efectividad",        icon: "🎯", leader: byEff,      value: `${byEff.effectivenessScore}%`,              color: "text-violet-300" },
                   { label: "Marcador exacto",     icon: "✅", leader: byExact,    value: `${byExact.exactRatio}%`,                    color: "text-emerald-300" },
                   { label: "Mejor precisión",     icon: "📐", leader: byDist,     value: `${byDist.avgDistance} goles`,               color: "text-sky-300" },
-                  { label: "Mejor en locales",    icon: "🏠", leader: byHome,     value: `${byHome.homeEffectiveness}%`,              color: "text-orange-300" },
-                  { label: "Mejor en visitantes", icon: "✈️",  leader: byAway,     value: `${byAway.awayEffectiveness}%`,              color: "text-blue-300" },
+                  { label: "Mejor local",        icon: "🏠", leader: byHome,     value: `${byHome.homeEffectiveness}%`,              color: "text-orange-300" },
+                  { label: "Mejor visitante",     icon: "✈️",  leader: byAway,     value: `${byAway.awayEffectiveness}%`,              color: "text-blue-300" },
                   { label: "Pts por partido",     icon: "📈", leader: byPPM,      value: `${byPPM.avgPointsPerMatch.toFixed(2)} pts`, color: "text-violet-300" },
                   { label: "Cobertura",           icon: "📋", leader: byCoverage, value: `${byCoverage.coverage}%`,                  color: "text-teal-300" },
-                  { label: "Racha máxima",        icon: "🔥", leader: byStreak,   value: `${byStreak.maxStreak} seguidos`,            color: "text-yellow-300" },
+                  { label: "Mejor racha",        icon: "🔥", leader: byStreak,   value: `${byStreak.maxStreak} seguidos`,            color: "text-yellow-300" },
                   { label: "Peor racha",          icon: "🧊", leader: byWorst,    value: `${byWorst.worstStreak} sin puntuar`,        color: "text-slate-400" },
+                  { label: "Acierto en penales",  icon: "🎯", leader: byPenalty,  value: `${byPenalty.penaltyAccuracy}%`,             color: "text-cyan-300" },
                 ];
 
                 return (
