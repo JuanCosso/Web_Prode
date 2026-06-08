@@ -118,7 +118,30 @@ export default function RoomClient({
 
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
+  const [shareMessage, setShareMessage] = useState("");
   const [allPredsByMatchUser, setAllPredsByMatchUser] = useState<Map<string, LivePred>>(new Map());
+
+  async function shareRoom() {
+    setShareMessage("");
+    const url = `${window.location.origin}/room/${room.id}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `Sala ${room.name}`, text: "Unite a la sala:", url });
+        setShareMessage("Enlace compartido correctamente.");
+        return;
+      } catch (error) {
+        // Si el usuario cancela o falla el share, dejamos que el fallback copie el enlace.
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareMessage("Enlace copiado al portapapeles. Pégalo en WhatsApp o donde quieras.");
+    } catch (error) {
+      setShareMessage("No se pudo copiar el enlace. Usa el navegador para compartirlo.");
+    }
+  }
 
   // ─── Handlers de inputs ───────────────────────────────────────────────────
   function handleScoreInput(matchId: string, field: "h" | "a", raw: string) {
@@ -374,6 +397,10 @@ export default function RoomClient({
                     )}
                   </button>
                 )}
+                <button onClick={shareRoom}
+                  className="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/15">
+                  Compartir
+                </button>
                 <button onClick={saveAll} disabled={saving}
                   className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50">
                   {saving ? "Guardando..." : "Guardar predicciones"}
@@ -406,6 +433,10 @@ export default function RoomClient({
                   )}
                 </button>
               )}
+              <button onClick={shareRoom}
+                className="flex-1 rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/15">
+                Compartir
+              </button>
               <button onClick={saveAll} disabled={saving}
                 className="flex-1 rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm transition disabled:opacity-50">
                 {saving ? "Guardando..." : "Guardar predicciones"}
@@ -473,6 +504,7 @@ export default function RoomClient({
           </div>
 
           {msg && <div className="mb-4 text-sm text-white/80">{msg}</div>}
+          {shareMessage && <div className="mb-4 text-sm text-emerald-200">{shareMessage}</div>}
 
           {room.editPolicy === "ALLOW_UNTIL_ROUND_CLOSE" && stageLocked && (
             <div className="mb-4 rounded-2xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-300">
