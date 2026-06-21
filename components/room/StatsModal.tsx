@@ -15,15 +15,16 @@ type Col = {
 
 const COLS: Col[] = [
   { label: "Efectividad",  sublabel: "pts / máx posible",          key: "effectivenessScore", format: v => `${v}%`,      best: "max" },
-  { label: "Exactos",      sublabel: "% marcadores exactos",       key: "exactRatio",         format: v => `${v}%`,      best: "max" },
-  { label: "Precisión",    sublabel: "dist. prom. al resultado",   key: "avgDistance",        format: v => `${v}`,       best: "min" },
-  { label: "Efectiv. Local",   sublabel: "cuando apostó al local", key: "homeEffectiveness",  format: v => `${v}%`,      best: "max" },
-  { label: "Efectiv. Visitante", sublabel: "cuando apostó al visitante", key: "awayEffectiveness",  format: v => `${v}%`,      best: "max" },
+  { label: "Exactos",      sublabel: "pts ganados / máx exactos",  key: "exactRatio",         format: v => `${v}%`,      best: "max" },
+  { label: "Precisión",    sublabel: "penalización prom. (menor=mejor)", key: "avgDistance",  format: v => `${v}`,       best: "min" },
+  { label: "Efectiv. Local",   sublabel: "s/ partidos que ganó local",   key: "homeEffectiveness",  format: v => `${v}%`, best: "max" },
+  { label: "Efectiv. Empate",  sublabel: "s/ partidos que empataron",    key: "drawEffectiveness",  format: v => `${v}%`, best: "max" },
+  { label: "Efectiv. Visitante", sublabel: "s/ partidos que ganó visit.", key: "awayEffectiveness", format: v => `${v}%`, best: "max" },
   { label: "Pts/partido",  sublabel: "promedio por predicho",      key: "avgPointsPerMatch",  format: v => v.toFixed(2), best: "max" },
   { label: "Cobertura",    sublabel: "% partidos predichos",       key: "coverage",           format: v => `${v}%`,      best: "max" },
-  { label: "Mejor racha",   sublabel: "partidos seguidos CON pts",  key: "maxStreak",          format: v => `${v}`,       best: "max" },
+  { label: "Mejor racha",  sublabel: "partidos seguidos CON pts",  key: "maxStreak",          format: v => `${v}`,       best: "max" },
   { label: "Peor racha",   sublabel: "partidos seguidos SIN pts",  key: "worstStreak",        format: v => `${v}`,       best: "max" },
-  { label: "Acierto en penales", sublabel: "% predicciones acertadas", key: "penaltyAccuracy",    format: v => `${v}%`,      best: "max" },
+  { label: "Acierto en penales", sublabel: "% sobre penales reales", key: "penaltyAccuracy",  format: v => `${v}%`,      best: "max" },
 ];
 
 export function StatsModal({
@@ -43,7 +44,7 @@ export function StatsModal({
     <div className="fixed inset-0 z-[9999]">
       <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={onClose} />
       <div className="absolute inset-0 flex items-center justify-center p-4">
-        <div className="relative bg-slate-900 border border-white/15 rounded-2xl w-full max-w-4xl shadow-2xl max-h-[85vh] flex flex-col">
+        <div className="relative bg-slate-900 border border-white/15 rounded-2xl w-full max-w-5xl shadow-2xl max-h-[85vh] flex flex-col">
 
           <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
             <div>
@@ -61,7 +62,7 @@ export function StatsModal({
           </div>
 
           <div className="overflow-auto flex-1">
-            <table className="w-full text-xs" style={{ minWidth: 660 }}>
+            <table className="w-full text-xs" style={{ minWidth: 800 }}>
               <thead className="sticky top-0 bg-slate-900 z-10">
                 <tr className="border-b border-white/10">
                   <th className="px-4 py-3 text-left text-white/50 font-medium">Jugador</th>
@@ -112,7 +113,7 @@ export function StatsModal({
           <div className="px-5 py-3 border-t border-white/10 shrink-0 flex flex-wrap gap-x-5 gap-y-1 text-[10px] text-white/25">
             <span><span className="text-emerald-400 font-bold">verde</span> = mejor (mayor)</span>
             <span><span className="text-sky-400 font-bold">azul</span> = mejor (menor)</span>
-            <span>Precisión: los no predichos suman {PENALTY_DIST} goles de penalización al promedio</span>
+            <span>Precisión: los no predichos suman {PENALTY_DIST} de penalización extra al promedio</span>
           </div>
 
         </div>
