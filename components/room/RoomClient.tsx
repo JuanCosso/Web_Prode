@@ -188,37 +188,30 @@ export default function RoomClient({
 
   // ─── SSE live ────────────────────────────────────────────────────────────
   useEffect(() => {
-    let es: EventSource | undefined;
-    try {
-      es = new EventSource(`/api/rooms/${room.id}/live`);
-   
-      es.onmessage = (e) => {
-        try {
-          const msg: { type: string; payload: unknown[] } = JSON.parse(e.data);
-   
-          if (msg.type === "preds") {
-            // Predicciones de otro usuario — actualizar tabla en tiempo real
-            const preds = msg.payload as LivePred[];
-            setAllPredsByMatchUser((prev) => {
-              const next = new Map(prev);
-              for (const p of preds) next.set(`${p.matchId}__${p.userId}`, p);
-              return next;
-            });
-          } else if (msg.type === "match_update") {
-            // Admin cargó resultados — revalidar datos del servidor
-            // (actualiza matches, standings y el lock visual del stage)
-            router.refresh();
-          }
-        } catch { /**/ }
-      };
-   
-      es.onerror = () => {
-        // El navegador reintenta automáticamente — no hace falta hacer nada
-      };
-    } catch { /**/ }
-   
-    return () => { try { es?.close(); } catch { /**/ } };
-  }, [room.id]);
+    const fetchLiveUpdates = async () => {
+      try {
+        const res = await fetch(`/api/rooms/${room.id}/live`);
+        if (!res.ok) return;
+
+        const data = await res.json();
+
+        if (data.type === "preds") {
+          const preds = data.payload as LivePred[];
+          setAllPredsByMatchUser((prev) => {
+            const next = new Map(prev);
+            for (const p of preds) next.set(`${p.matchId}__${p.userId}`, p);
+            return next;
+          });
+        } else if (data.type === "match_update") {
+          router.refresh();
+        }
+      } catch { /**/ }
+    };
+
+    fetchLiveUpdates();
+    const intervalId = setInterval(fetchLiveUpdates, 5000);
+    return () => clearInterval(intervalId);
+  }, [room.id, router]);
 
   // ─── Guardar predicciones ─────────────────────────────────────────────────
   async function saveAll() {
