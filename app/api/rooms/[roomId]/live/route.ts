@@ -12,13 +12,13 @@ export async function GET(
   try {
     const { roomId } = await params;
 
-    // Auth
+    // 1. Autenticación
     const me = await getCurrentUser();
     if (!me) {
       return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
     }
 
-    // Verificar membresía activa
+    // 2. Verificar membresía activa usando tu tabla RoomMember
     const member = await prisma.roomMember.findUnique({
       where: { roomId_userId: { roomId, userId: me.id } },
       select: { status: true },
@@ -28,30 +28,27 @@ export async function GET(
       return NextResponse.json({ error: "NOT_A_MEMBER" }, { status: 403 });
     }
 
-    // Buscar todas las predicciones de la sala
+    // 3. Buscar las predicciones usando la estructura real de tu esquema
     const predictions = await prisma.prediction.findMany({
       where: {
-        roomMember: { roomId }
+        roomId: roomId
       },
       include: {
-        roomMember: {
-          include: { user: true }
-        }
+        user: true // Traemos el displayName desde el modelo User directamente
       }
     });
 
-    // Mapear al formato exacto (LivePred) que espera el frontend
-    // Usamos 'any' en el parámetro para evitar errores de tipado estricto de TypeScript durante el build
+    // 4. Mapear los datos al formato exacto (LivePred) que devora el frontend
     const formattedPreds = predictions.map((p: any) => ({
       matchId: p.matchId,
-      userId: p.roomMember.userId,
-      displayName: p.roomMember.user.displayName,
+      userId: p.userId,
+      displayName: p.user?.displayName ?? "Usuario",
       h: p.predHomeGoals !== null ? String(p.predHomeGoals) : "",
       a: p.predAwayGoals !== null ? String(p.predAwayGoals) : "",
       penWinner: p.predPenWinner ?? null,
     }));
 
-    // Retornar JSON puro (adiós SSE)
+    // 5. Enviar respuesta limpia en JSON
     return NextResponse.json({
       type: "preds",
       payload: formattedPreds,
