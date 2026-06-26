@@ -18,7 +18,7 @@ export async function GET(
       return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
     }
 
-    // 2. Verificar membresía activa usando tu tabla RoomMember
+    // 2. Verificar membresía activa
     const member = await prisma.roomMember.findUnique({
       where: { roomId_userId: { roomId, userId: me.id } },
       select: { status: true },
@@ -28,27 +28,27 @@ export async function GET(
       return NextResponse.json({ error: "NOT_A_MEMBER" }, { status: 403 });
     }
 
-    // 3. Buscar las predicciones usando la estructura real de tu esquema
+    // 3. Buscar las predicciones
     const predictions = await prisma.prediction.findMany({
       where: {
         roomId: roomId
       },
       include: {
-        user: true // Traemos el displayName desde el modelo User directamente
+        user: true 
       }
     });
 
-    // 4. Mapear los datos al formato exacto (LivePred) que devora el frontend
+    // 4. Mapear sin forzar a String. Mantenemos los números intactos.
     const formattedPreds = predictions.map((p: any) => ({
       matchId: p.matchId,
       userId: p.userId,
       displayName: p.user?.displayName ?? "Usuario",
-      h: p.predHomeGoals !== null ? String(p.predHomeGoals) : "",
-      a: p.predAwayGoals !== null ? String(p.predAwayGoals) : "",
+      h: p.predHomeGoals,
+      a: p.predAwayGoals,
       penWinner: p.predPenWinner ?? null,
     }));
 
-    // 5. Enviar respuesta limpia en JSON
+    // 5. Enviar respuesta
     return NextResponse.json({
       type: "preds",
       payload: formattedPreds,
