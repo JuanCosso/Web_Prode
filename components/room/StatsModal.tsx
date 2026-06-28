@@ -3,7 +3,6 @@
 import { createPortal } from "react-dom";
 import type { Me } from "./types";
 import type { PlayerStat } from "./stats";
-import { PENALTY_DIST } from "./constants";
 
 type Col = {
   label: string;
@@ -14,17 +13,18 @@ type Col = {
 };
 
 const COLS: Col[] = [
-  { label: "Efectividad",  sublabel: "pts / máx posible",          key: "effectivenessScore", format: v => `${v}%`,      best: "max" },
-  { label: "Exactos",      sublabel: "pts ganados / máx exactos",  key: "exactRatio",         format: v => `${v}%`,      best: "max" },
-  { label: "Precisión",    sublabel: "penalización prom. (menor=mejor)", key: "avgDistance",  format: v => `${v}`,       best: "min" },
-  { label: "Efectiv. Local",   sublabel: "s/ partidos que ganó local",   key: "homeEffectiveness",  format: v => `${v}%`, best: "max" },
-  { label: "Efectiv. Empate",  sublabel: "s/ partidos que empataron",    key: "drawEffectiveness",  format: v => `${v}%`, best: "max" },
-  { label: "Efectiv. Visitante", sublabel: "s/ partidos que ganó visit.", key: "awayEffectiveness", format: v => `${v}%`, best: "max" },
-  { label: "Pts/partido",  sublabel: "promedio por predicho",      key: "avgPointsPerMatch",  format: v => v.toFixed(2), best: "max" },
-  { label: "Cobertura",    sublabel: "% partidos predichos",       key: "coverage",           format: v => `${v}%`,      best: "max" },
-  { label: "Mejor racha",  sublabel: "partidos seguidos CON pts",  key: "maxStreak",          format: v => `${v}`,       best: "max" },
-  { label: "Peor racha",   sublabel: "partidos seguidos SIN pts",  key: "worstStreak",        format: v => `${v}`,       best: "max" },
-  { label: "Acierto en penales", sublabel: "% sobre penales reales", key: "penaltyAccuracy",  format: v => `${v}%`,      best: "max" },
+  { label: "Efectividad",       sublabel: "pts / máx posible",          key: "effectivenessScore", format: v => `${v}%`,        best: "max" },
+  { label: "Exactos",           sublabel: "pts ganados / máx exactos", key: "exactRatio",         format: v => `${v}%`,        best: "max" },
+  { label: "Precisión",         sublabel: "desv. prom.",               key: "avgDistance",        format: v => `${v}`,         best: "min" },
+  { label: "Factor Riesgo",     sublabel: "desviación est.",           key: "riskFactor",         format: v => v.toFixed(2),   best: "min" },
+  { label: "Racha Exactos",     sublabel: "bloques seguidos",          key: "maxExactStreak",     format: v => `${v}`,         best: "max" },
+  { label: "Efectiv. Local",    sublabel: "s/ partidos que ganó local",  key: "homeEffectiveness",  format: v => `${v}%`,        best: "max" },
+  { label: "Efectiv. Empate",   sublabel: "s/ partidos que empataron",   key: "drawEffectiveness",  format: v => `${v}%`,        best: "max" },
+  { label: "Efectiv. Visit.",   sublabel: "s/ partidos que ganó visit.", key: "awayEffectiveness", format: v => `${v}%`,        best: "max" },
+  { label: "Pts/partido",       sublabel: "promedio",                  key: "avgPointsPerMatch",  format: v => v.toFixed(2),   best: "max" },
+  { label: "Cobertura",         sublabel: "% partidos predichos",      key: "coverage",           format: v => `${v}%`,        best: "max" },
+  { label: "Racha (Pts)",       sublabel: "partidos seguidos",         key: "maxStreak",          format: v => `${v}`,         best: "max" },
+  { label: "Acierto Penales",   sublabel: "% sobre penales reales",    key: "penaltyAccuracy",    format: v => `${v}%`,        best: "max" },
 ];
 
 export function StatsModal({
@@ -62,7 +62,7 @@ export function StatsModal({
           </div>
 
           <div className="overflow-auto flex-1">
-            <table className="w-full text-xs" style={{ minWidth: 800 }}>
+            <table className="w-full text-xs" style={{ minWidth: 1000 }}>
               <thead className="sticky top-0 bg-slate-900 z-10">
                 <tr className="border-b border-white/10">
                   <th className="px-4 py-3 text-left text-white/50 font-medium">Jugador</th>
@@ -111,9 +111,8 @@ export function StatsModal({
           </div>
 
           <div className="px-5 py-3 border-t border-white/10 shrink-0 flex flex-wrap gap-x-5 gap-y-1 text-[10px] text-white/25">
-            <span><span className="text-emerald-400 font-bold">verde</span> = mejor (mayor)</span>
-            <span><span className="text-sky-400 font-bold">azul</span> = mejor (menor)</span>
-            <span>Precisión: los no predichos suman {PENALTY_DIST} de penalización extra al promedio</span>
+            <span><span className="text-emerald-400 font-bold">verde</span> = mejor (valor alto)</span>
+            <span><span className="text-sky-400 font-bold">azul</span> = mejor (valor bajo)</span>
           </div>
 
         </div>

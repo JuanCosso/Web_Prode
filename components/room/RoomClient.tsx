@@ -65,7 +65,7 @@ export default function RoomClient({
     () => STAGE_ORDER.filter((s) => matches.some((m) => m.stage === s)),
     [matches]
   );
-  const [activeStage, setActiveStage] = useState(() => stagesPresent[0] ?? "GROUP");
+  const [activeStage, setActiveStage] = useState(() => stagesPresent[0] ?? "R32");
   const stageMatches = useMemo(
     () => matches.filter((m) => m.stage === activeStage),
     [matches, activeStage]
@@ -614,17 +614,19 @@ export default function RoomClient({
                 const byPenalty  = [...playerStats].sort((a, b) => b.penaltyAccuracy - a.penaltyAccuracy)[0];
 
                 const statsRows = [
-                  { label: "Efectividad general",   icon: "🎯", leader: byEff,      value: `${byEff.effectivenessScore}%`,              color: "text-violet-300" },
-                  { label: "Marcador exacto",       icon: "✅", leader: byExact,    value: `${byExact.exactRatio}%`,                    color: "text-emerald-300" },
-                  { label: "Mejor precisión",       icon: "📐", leader: byDist,     value: `${byDist.avgDistance} pts penaliz.`,        color: "text-sky-300" },
-                  { label: "Efectividad local",     icon: "🏠", leader: byHome,     value: `${byHome.homeEffectiveness}%`,              color: "text-orange-300" },
-                  { label: "Efectividad empates",   icon: "⚖️", leader: byDraw,     value: `${byDraw.drawEffectiveness}%`,              color: "text-zinc-300" },
-                  { label: "Efectividad visitante", icon: "✈️",  leader: byAway,     value: `${byAway.awayEffectiveness}%`,              color: "text-blue-300" },
-                  { label: "Pts por partido",       icon: "📈", leader: byPPM,      value: `${byPPM.avgPointsPerMatch.toFixed(2)} pts`, color: "text-violet-300" },
-                  { label: "Cobertura",             icon: "📋", leader: byCoverage, value: `${byCoverage.coverage}%`,                   color: "text-teal-300" },
-                  { label: "Mejor racha",           icon: "🔥", leader: byStreak,   value: `${byStreak.maxStreak} seguidos`,            color: "text-yellow-300" },
-                  { label: "Peor racha",            icon: "🧊", leader: byWorst,    value: `${byWorst.worstStreak} sin puntuar`,        color: "text-slate-400" },
-                  { label: "Acierto en penales",    icon: "🎯", leader: byPenalty,  value: `${byPenalty.penaltyAccuracy}%`,             color: "text-cyan-300" },
+                  { label: "Efectividad general",   icon: "🎯", leader: byEff,       value: `${byEff.effectivenessScore}%`,                color: "text-violet-300" },
+                  { label: "Marcador exacto",       icon: "✅", leader: byExact,     value: `${byExact.exactRatio}%`,                      color: "text-emerald-300" },
+                  { label: "Precisión",             icon: "📐", leader: byDist,      value: `${byDist.avgDistance}`,                       color: "text-sky-300" },
+                  { label: "Factor Riesgo",         icon: "🎲", leader: byEff,       value: `${byEff.riskFactor}`,                         color: "text-red-300" },
+                  { label: "Racha de exactos",      icon: "💎", leader: byStreak,    value: `${byStreak.maxExactStreak} seguidos`,         color: "text-indigo-300" },
+                  { label: "Efectividad local",     icon: "🏠", leader: byHome,      value: `${byHome.homeEffectiveness}%`,                color: "text-orange-300" },
+                  { label: "Efectividad empates",   icon: "⚖️", leader: byDraw,      value: `${byDraw.drawEffectiveness}%`,                color: "text-zinc-300" },
+                  { label: "Efectividad visitante", icon: "✈️", leader: byAway,      value: `${byAway.awayEffectiveness}%`,                color: "text-blue-300" },
+                  { label: "Pts por partido",       icon: "📈", leader: byPPM,       value: `${byPPM.avgPointsPerMatch.toFixed(2)} pts`,   color: "text-violet-300" },
+                  { label: "Cobertura",             icon: "📋", leader: byCoverage,  value: `${byCoverage.coverage}%`,                     color: "text-teal-300" },
+                  { label: "Mejor racha",           icon: "🔥", leader: byStreak,    value: `${byStreak.maxStreak} seguidos`,              color: "text-yellow-300" },
+                  { label: "Peor racha",            icon: "🧊", leader: byWorst,     value: `${byWorst.worstStreak} sin puntuar`,          color: "text-slate-400" },
+                  { label: "Acierto en penales",    icon: "🎯", leader: byPenalty,   value: `${byPenalty.penaltyAccuracy}%`,               color: "text-cyan-300" },
                 ];
 
                 return (
