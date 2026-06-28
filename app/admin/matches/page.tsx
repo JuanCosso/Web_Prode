@@ -57,6 +57,13 @@ export default function AdminMatchesPage() {
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
 
+  const [roomId, setRoomId] = useState("");
+  const [fromDisplayName, setFromDisplayName] = useState("");
+  const [toDisplayName, setToDisplayName] = useState("");
+  const [overwriteExisting, setOverwriteExisting] = useState(false);
+  const [transfering, setTransfering] = useState(false);
+  const [transferMsg, setTransferMsg] = useState("");
+
   const [randomizing, setRandomizing] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [bulkMsg, setBulkMsg] = useState("");
@@ -167,6 +174,40 @@ export default function AdminMatchesPage() {
     setBulkMsg(`🗑️ ${data.updated}/${withResults.length} resultados eliminados`);
   }
 
+  async function transferPredictions() {
+    setTransferMsg("");
+    setTransfering(true);
+
+    const body = {
+      roomId: roomId.trim(),
+      fromDisplayName: fromDisplayName.trim(),
+      toDisplayName: toDisplayName.trim(),
+      overwriteExisting,
+    };
+
+    const res = await fetch("/api/admin/predictions/transfer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    setTransfering(false);
+
+    if (!res.ok) {
+      setTransferMsg(`❌ Error: ${data.error ?? "desconocido"}`);
+      return;
+    }
+
+    setTransferMsg(
+      `✅ Transferidas ${data.moved} predicciones${data.overwritten ? `, sobrescritas ${data.overwritten}` : ""}${data.skipped ? `, omitidas ${data.skipped}` : ""}`
+    );
+    setRoomId("");
+    setFromDisplayName("");
+    setToDisplayName("");
+    setOverwriteExisting(false);
+  }
+
   const stagesPresent = STAGE_ORDER.filter((s) => matches.some((m) => m.stage === s));
   const filtered = matches
     .filter((m) => m.stage === selectedStage)
@@ -207,6 +248,50 @@ export default function AdminMatchesPage() {
             >
               {clearing ? "Borrando..." : "🗑️ Borrar resultados"}
             </button>
+          </div>
+        </div>
+
+        <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+          <h2 className="text-sm font-semibold">Transferir predicciones entre cuentas</h2>
+          <p className="mt-1 text-xs text-white/60">Pasa los pronósticos que hizo una cuenta antigua a la cuenta nueva dentro de la misma sala.</p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-4">
+            <input
+              value={roomId}
+              onChange={(e) => setRoomId(e.target.value)}
+              className="rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm outline-none focus:border-white/30"
+              placeholder="ID de sala"
+            />
+            <input
+              value={fromDisplayName}
+              onChange={(e) => setFromDisplayName(e.target.value)}
+              className="rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm outline-none focus:border-white/30"
+              placeholder="Cuenta vieja (displayName)"
+            />
+            <input
+              value={toDisplayName}
+              onChange={(e) => setToDisplayName(e.target.value)}
+              className="rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm outline-none focus:border-white/30"
+              placeholder="Cuenta nueva (displayName)"
+            />
+            <label className="flex items-center gap-2 text-xs text-white/60">
+              <input
+                type="checkbox"
+                checked={overwriteExisting}
+                onChange={(e) => setOverwriteExisting(e.target.checked)}
+                className="h-4 w-4 rounded border-white/20 bg-white/10 text-white focus:ring-white"
+              />
+              Sobrescribir predicciones existentes
+            </label>
+          </div>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              onClick={transferPredictions}
+              disabled={transfering || randomizing || clearing}
+              className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-white/90 disabled:opacity-50"
+            >
+              {transfering ? "Transfiriendo..." : "Transferir predicciones"}
+            </button>
+            {transferMsg && <p className="text-xs text-white/70">{transferMsg}</p>}
           </div>
         </div>
 
