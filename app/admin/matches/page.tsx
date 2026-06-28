@@ -306,6 +306,8 @@ export default function AdminMatchesPage() {
                         onClick={() => openEdit(m)}
                         className="rounded-lg border border-white/20 px-3 py-1 text-xs transition hover:bg-white/10"
                       >
+                        {hasResult ? "Editar" : "Cargar"}
+                      </button>
                     </td>
                   </tr>
                 );
@@ -398,6 +400,7 @@ export default function AdminMatchesPage() {
                   Cancelar
                 </button>
                 <button onClick={saveResult} disabled={saving} className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-white/90 disabled:opacity-50">
+                  {saving ? "Guardando..." : "Guardar"}
                 </button>
               </div>
             </div>
