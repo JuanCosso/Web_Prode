@@ -87,6 +87,7 @@ export function computePlayerStats(
     let curBadStreak = 0;
     let maxExactStreak = 0;
     let curExactStreak = 0;
+    let hasParticipated = false;
 
     for (const time of sortedTimes) {
       const block = blocks.get(time)!;
@@ -146,27 +147,36 @@ export function computePlayerStats(
         if (!isOutcome && !isExact) blockAllPositive = false;
       }
 
-      if (blockHasPrediction) {
-        if (blockAllPositive) {
-          curStreak += 1;
-          maxStreak = Math.max(maxStreak, curStreak);
-          curBadStreak = 0;
-        } else {
-          curBadStreak += 1;
-          worstStreak = Math.max(worstStreak, curBadStreak);
+      if (!blockHasPrediction) {
+        if (!hasParticipated) {
           curStreak = 0;
+          curBadStreak = 0;
+          curExactStreak = 0;
+          continue;
         }
 
-        if (blockAllExact && blockAllPositive) {
-          curExactStreak += 1;
-          maxExactStreak = Math.max(maxExactStreak, curExactStreak);
-        } else {
-          curExactStreak = 0;
-        }
+        curBadStreak += 1;
+        worstStreak = Math.max(worstStreak, curBadStreak);
+        curStreak = 0;
+        curExactStreak = 0;
+        continue;
+      }
+
+      hasParticipated = true;
+      if (blockAllPositive) {
+        curStreak += 1;
+        maxStreak = Math.max(maxStreak, curStreak);
+        curBadStreak = 0;
       } else {
         curBadStreak += 1;
         worstStreak = Math.max(worstStreak, curBadStreak);
         curStreak = 0;
+      }
+
+      if (blockAllExact && blockAllPositive) {
+        curExactStreak += 1;
+        maxExactStreak = Math.max(maxExactStreak, curExactStreak);
+      } else {
         curExactStreak = 0;
       }
     }
