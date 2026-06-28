@@ -62,12 +62,12 @@ export default function RoomClient({
     [matches]
   );
   const stagesPresent = useMemo(() => {
-    const allStages = Array.from(new Set(matches.map((m) => m.stage)));
-    // Ordenamos según tu STAGE_ORDER para que aparezcan en el orden correcto
-    return STAGE_ORDER.filter(s => allStages.includes(s));
-  }, [matches]);
+  const allStages = Array.from(new Set(matches.map((m) => m.stage)));
+  // ESTO ES CLAVE: Filtra asegurando que "R32" no sea excluido
+  return STAGE_ORDER.filter(s => allStages.includes(s));
+}, [matches]);
 
-  const [activeStage, setActiveStage] = useState(() => stagesPresent.includes("R32") ? "R32" : (stagesPresent[0] ?? "GROUP"));
+  const [activeStage, setActiveStage] = useState(() => stagesPresent[0] ?? "GROUP");
   const stageMatches = useMemo(
     () => matches.filter((m) => m.stage === activeStage),
     [matches, activeStage]
