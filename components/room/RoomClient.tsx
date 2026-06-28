@@ -62,12 +62,12 @@ export default function RoomClient({
     [matches]
   );
   const stagesPresent = useMemo(() => {
-  const present = STAGE_ORDER.filter((s) => matches.some((m) => m.stage === s));
-  if (!present.includes('R32')) present.push('R32'); // Fuerza la aparición
-  return present.sort((a, b) => STAGE_ORDER.indexOf(a) - STAGE_ORDER.indexOf(b));
+    const allStages = Array.from(new Set(matches.map((m) => m.stage)));
+    // Ordenamos según tu STAGE_ORDER para que aparezcan en el orden correcto
+    return STAGE_ORDER.filter(s => allStages.includes(s));
   }, [matches]);
 
-  const [activeStage, setActiveStage] = useState(() => stagesPresent[0] ?? "R32");
+  const [activeStage, setActiveStage] = useState(() => stagesPresent.includes("R32") ? "R32" : (stagesPresent[0] ?? "GROUP"));
   const stageMatches = useMemo(
     () => matches.filter((m) => m.stage === activeStage),
     [matches, activeStage]
@@ -186,7 +186,7 @@ export default function RoomClient({
   useEffect(() => {
     loadPredictions(activeStage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeStage]);
+  }, [activeStage, room.id]);
 
   // ─── SSE live ────────────────────────────────────────────────────────────
   useEffect(() => {
