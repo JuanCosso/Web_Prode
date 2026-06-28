@@ -2,30 +2,8 @@
 
 import { createPortal } from "react-dom";
 import type { Me } from "./types";
+import { PLAYER_STAT_ROWS } from "./stats";
 import type { PlayerStat } from "./stats";
-
-type Col = {
-  label: string;
-  sublabel: string;
-  key: keyof PlayerStat;
-  format: (v: number) => string;
-  best: "max" | "min";
-};
-
-const COLS: Col[] = [
-  { label: "Efectividad",       sublabel: "pts / máx posible",          key: "effectivenessScore", format: v => `${v}%`,        best: "max" },
-  { label: "Exactos",           sublabel: "pts ganados / máx exactos", key: "exactRatio",         format: v => `${v}%`,        best: "max" },
-  { label: "Precisión",         sublabel: "desv. prom.",               key: "avgDistance",        format: v => `${v}`,         best: "min" },
-  { label: "Factor Riesgo",     sublabel: "desviación est.",           key: "riskFactor",         format: v => v.toFixed(2),   best: "min" },
-  { label: "Racha Exactos",     sublabel: "bloques seguidos",          key: "maxExactStreak",     format: v => `${v}`,         best: "max" },
-  { label: "Efectiv. Local",    sublabel: "s/ partidos que ganó local",  key: "homeEffectiveness",  format: v => `${v}%`,        best: "max" },
-  { label: "Efectiv. Empate",   sublabel: "s/ partidos que empataron",   key: "drawEffectiveness",  format: v => `${v}%`,        best: "max" },
-  { label: "Efectiv. Visit.",   sublabel: "s/ partidos que ganó visit.", key: "awayEffectiveness", format: v => `${v}%`,        best: "max" },
-  { label: "Pts/partido",       sublabel: "promedio",                  key: "avgPointsPerMatch",  format: v => v.toFixed(2),   best: "max" },
-  { label: "Cobertura",         sublabel: "% partidos predichos",      key: "coverage",           format: v => `${v}%`,        best: "max" },
-  { label: "Racha (Pts)",       sublabel: "partidos seguidos",         key: "maxStreak",          format: v => `${v}`,         best: "max" },
-  { label: "Acierto Penales",   sublabel: "% sobre penales reales",    key: "penaltyAccuracy",    format: v => `${v}%`,        best: "max" },
-];
 
 export function StatsModal({
   stats,
@@ -66,7 +44,7 @@ export function StatsModal({
               <thead className="sticky top-0 bg-slate-900 z-10">
                 <tr className="border-b border-white/10">
                   <th className="px-4 py-3 text-left text-white/50 font-medium">Jugador</th>
-                  {COLS.map(c => (
+                  {PLAYER_STAT_ROWS.map((c) => (
                     <th key={c.key as string} className="px-3 py-3 text-center font-medium whitespace-nowrap">
                       <div className="text-white/70">{c.label}</div>
                       <div className="text-[10px] text-white/30 font-normal mt-px">{c.sublabel}</div>
@@ -86,8 +64,8 @@ export function StatsModal({
                         <span className={isMe ? "text-white" : "text-white/70"}>{s.displayName}</span>
                         {isMe && <span className="ml-1.5 text-[10px] text-white/25">(vos)</span>}
                       </td>
-                      {COLS.map(c => {
-                        const vals = stats.map(x => x[c.key] as number);
+                      {PLAYER_STAT_ROWS.map((c) => {
+                        const vals = stats.map((x) => x[c.key] as number);
                         const bestVal = c.best === "max" ? Math.max(...vals) : Math.min(...vals);
                         const isBest = (s[c.key] as number) === bestVal && stats.length > 1;
                         return (

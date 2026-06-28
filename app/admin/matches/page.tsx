@@ -186,48 +186,89 @@ export default function AdminMatchesPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <div className="max-w-5xl mx-auto px-4 py-8">
-
-        <div className="flex items-start justify-between gap-4 mb-1 flex-wrap">
-          <h1 className="text-2xl font-bold">Admin — Resultados</h1>
-          <div className="flex gap-2 flex-wrap">
+      <div className="mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-8">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold sm:text-2xl">Admin — Resultados</h1>
+            <p className="mt-1 text-sm text-white/50">Cargá los resultados reales de cada partido desde tu móvil sin girar la pantalla.</p>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             <button
               onClick={randomizeGroupResults}
               disabled={randomizing || clearing}
-              className="rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-xs font-medium hover:bg-white/10 transition disabled:opacity-50"
+              className="rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-xs font-medium transition hover:bg-white/10 disabled:opacity-50"
             >
               {randomizing ? "Cargando..." : "🎲 Random (Grupos)"}
             </button>
             <button
               onClick={clearAllResults}
               disabled={randomizing || clearing}
-              className="rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 px-4 py-2 text-xs font-medium hover:bg-red-500/20 transition disabled:opacity-50"
+              className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
             >
-              {clearing ? "Borrando..." : "🗑️ Borrar todos los resultados"}
+              {clearing ? "Borrando..." : "🗑️ Borrar resultados"}
             </button>
           </div>
         </div>
 
-        {bulkMsg && <p className="text-xs text-white/60 mb-4 mt-1">{bulkMsg}</p>}
+        {bulkMsg && <p className="mb-4 mt-1 text-xs text-white/60">{bulkMsg}</p>}
 
-        <p className="text-white/50 text-sm mb-6">Cargá los resultados reales de cada partido.</p>
-
-        {/* Tabs de stage */}
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="mb-5 flex flex-wrap gap-2">
           {stagesPresent.map((s) => (
-            <button key={s} onClick={() => setSelectedStage(s)}
-              className={["rounded-xl px-3 py-1.5 text-xs font-medium transition",
-                selectedStage === s ? "bg-white text-slate-950" : "border border-white/20 text-white/70 hover:bg-white/10"
-              ].join(" ")}>
+            <button
+              key={s}
+              onClick={() => setSelectedStage(s)}
+              className={[
+                "rounded-xl px-3 py-1.5 text-xs font-medium transition",
+                selectedStage === s ? "bg-white text-slate-950" : "border border-white/20 text-white/70 hover:bg-white/10",
+              ].join(" ")}
+            >
               {STAGE_LABELS[s] ?? s}
             </button>
           ))}
         </div>
 
-        {/* Tabla de partidos */}
-        <div className="rounded-2xl border border-white/10 overflow-hidden">
+        <div className="space-y-3 sm:hidden">
+          {filtered.map((m) => {
+            const hasResult = m.homeGoals !== null && m.awayGoals !== null;
+            return (
+              <div key={m.id} className="rounded-2xl border border-white/10 bg-white/5 p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold leading-tight">{m.homeTeam} vs {m.awayTeam}</div>
+                    <div className="mt-1 text-[11px] text-white/40">{m.fifaId} · {m.city}</div>
+                    <div className="mt-2 text-[11px] text-white/50">{fmtKickoff(m.kickoffAt)}</div>
+                  </div>
+                  <button
+                    onClick={() => openEdit(m)}
+                    className="shrink-0 rounded-lg border border-white/20 px-3 py-1.5 text-xs font-medium hover:bg-white/10"
+                  >
+                    {hasResult ? "Editar" : "Cargar"}
+                  </button>
+                </div>
+                <div className="mt-3 flex items-center justify-between text-xs">
+                  <span className="text-white/55">Resultado</span>
+                  {hasResult ? (
+                    <span className="font-semibold text-emerald-400">{m.homeGoals} – {m.awayGoals}</span>
+                  ) : (
+                    <span className="text-white/30">Sin cargar</span>
+                  )}
+                </div>
+                <div className="mt-2 flex items-center justify-between text-xs">
+                  <span className="text-white/55">Penales</span>
+                  {m.decidedByPenalties ? (
+                    <span className="text-amber-400">🏆 {m.penWinner}</span>
+                  ) : (
+                    <span className="text-white/20">—</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="hidden overflow-hidden rounded-2xl border border-white/10 sm:block">
           <table className="w-full text-sm">
-            <thead className="bg-white/5 text-white/60 text-xs uppercase">
+            <thead className="bg-white/5 text-xs uppercase text-white/60">
               <tr>
                 <th className="px-4 py-3 text-left">Partido</th>
                 <th className="px-4 py-3 text-center">Resultado</th>
@@ -240,27 +281,31 @@ export default function AdminMatchesPage() {
               {filtered.map((m) => {
                 const hasResult = m.homeGoals !== null && m.awayGoals !== null;
                 return (
-                  <tr key={m.id} className="border-t border-white/8 hover:bg-white/4 transition">
+                  <tr key={m.id} className="border-t border-white/8 transition hover:bg-white/4">
                     <td className="px-4 py-3">
                       <div className="font-medium">{m.homeTeam} vs {m.awayTeam}</div>
                       <div className="text-xs text-white/40">{m.fifaId} · {m.city}</div>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      {hasResult
-                        ? <span className="font-bold text-green-400">{m.homeGoals} – {m.awayGoals}</span>
-                        : <span className="text-white/30">—</span>}
+                      {hasResult ? (
+                        <span className="font-bold text-green-400">{m.homeGoals} – {m.awayGoals}</span>
+                      ) : (
+                        <span className="text-white/30">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-center text-xs">
-                      {m.decidedByPenalties
-                        ? <span className="text-yellow-400">🏆 {m.penWinner}</span>
-                        : <span className="text-white/20">—</span>}
+                      {m.decidedByPenalties ? (
+                        <span className="text-yellow-400">🏆 {m.penWinner}</span>
+                      ) : (
+                        <span className="text-white/20">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-center text-xs text-white/50">{fmtKickoff(m.kickoffAt)}</td>
                     <td className="px-4 py-3 text-center">
-                      <button onClick={() => openEdit(m)}
-                        className="rounded-lg border border-white/20 px-3 py-1 text-xs hover:bg-white/10 transition">
-                        {hasResult ? "Editar" : "Cargar"}
-                      </button>
+                      <button
+                        onClick={() => openEdit(m)}
+                        className="rounded-lg border border-white/20 px-3 py-1 text-xs transition hover:bg-white/10"
+                      >
                     </td>
                   </tr>
                 );
@@ -271,57 +316,73 @@ export default function AdminMatchesPage() {
 
         {/* Modal de edición */}
         {editing && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setEditing(null)} />
-            <div className="relative bg-slate-900 border border-white/15 rounded-2xl p-6 w-full max-w-md shadow-2xl">
-              <h2 className="font-semibold text-lg mb-1">{editing.homeTeam} vs {editing.awayTeam}</h2>
-              <p className="text-xs text-white/40 mb-5">{editing.fifaId} · {editing.city}</p>
+            <div className="relative w-full max-w-md rounded-2xl border border-white/15 bg-slate-900 p-4 shadow-2xl sm:p-6">
+              <h2 className="mb-1 text-lg font-semibold">{editing.homeTeam} vs {editing.awayTeam}</h2>
+              <p className="mb-4 text-xs text-white/40">{editing.fifaId} · {editing.city}</p>
 
-              {/* Equipos */}
               <div className="mb-4">
-                <label className="block text-xs text-white/60 mb-2">Equipos (opcional)</label>
-                <div className="flex gap-2">
-                  <input value={newHomeTeam} onChange={(e) => setNewHomeTeam(e.target.value)}
-                    className="flex-1 bg-white/10 border border-white/15 rounded-lg px-3 py-2 text-sm outline-none focus:border-white/30"
-                    placeholder="Local" />
-                  <input value={newAwayTeam} onChange={(e) => setNewAwayTeam(e.target.value)}
-                    className="flex-1 bg-white/10 border border-white/15 rounded-lg px-3 py-2 text-sm outline-none focus:border-white/30"
-                    placeholder="Visitante" />
+                <label className="mb-2 block text-xs text-white/60">Equipos (opcional)</label>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    value={newHomeTeam}
+                    onChange={(e) => setNewHomeTeam(e.target.value)}
+                    className="flex-1 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm outline-none focus:border-white/30"
+                    placeholder="Local"
+                  />
+                  <input
+                    value={newAwayTeam}
+                    onChange={(e) => setNewAwayTeam(e.target.value)}
+                    className="flex-1 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm outline-none focus:border-white/30"
+                    placeholder="Visitante"
+                  />
                 </div>
               </div>
 
-              {/* Resultado */}
               <div className="mb-4">
-                <label className="block text-xs text-white/60 mb-2">Resultado</label>
-                <div className="flex items-center gap-3">
-                  <input type="number" min={0} max={30} value={homeGoals}
+                <label className="mb-2 block text-xs text-white/60">Resultado</label>
+                <div className="flex items-center justify-center gap-3 sm:justify-start">
+                  <input
+                    type="number"
+                    min={0}
+                    max={30}
+                    value={homeGoals}
                     onChange={(e) => setHomeGoals(e.target.value)}
-                    className="w-20 bg-white/10 border border-white/15 rounded-lg px-3 py-2 text-sm text-center outline-none focus:border-white/30"
-                    placeholder="0" />
-                  <span className="text-white/40 font-bold">–</span>
-                  <input type="number" min={0} max={30} value={awayGoals}
+                    className="w-20 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-center text-sm outline-none focus:border-white/30"
+                    placeholder="0"
+                  />
+                  <span className="text-sm font-bold text-white/40">–</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={30}
+                    value={awayGoals}
                     onChange={(e) => setAwayGoals(e.target.value)}
-                    className="w-20 bg-white/10 border border-white/15 rounded-lg px-3 py-2 text-sm text-center outline-none focus:border-white/30"
-                    placeholder="0" />
+                    className="w-20 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-center text-sm outline-none focus:border-white/30"
+                    placeholder="0"
+                  />
                 </div>
               </div>
 
-              {/* Penales */}
-              <div className="mb-6">
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="checkbox" checked={penalties} onChange={(e) => setPenalties(e.target.checked)}
-                    className="rounded" />
+              <div className="mb-5">
+                <label className="flex cursor-pointer items-center gap-2 text-sm">
+                  <input type="checkbox" checked={penalties} onChange={(e) => setPenalties(e.target.checked)} className="rounded" />
                   Definido por penales
                 </label>
                 {penalties && (
                   <div className="mt-3">
-                    <label className="block text-xs text-white/60 mb-1">Ganador en penales</label>
-                    <div className="flex gap-2">
+                    <label className="mb-1 block text-xs text-white/60">Ganador en penales</label>
+                    <div className="flex flex-col gap-2 sm:flex-row">
                       {[editing.homeTeam, editing.awayTeam].map((t) => (
-                        <button key={t} onClick={() => setPenWinner(t)}
-                          className={["flex-1 rounded-lg px-3 py-2 text-sm transition",
-                            penWinner === t ? "bg-white text-slate-950 font-semibold" : "bg-white/10 border border-white/15 hover:bg-white/20"
-                          ].join(" ")}>
+                        <button
+                          key={t}
+                          onClick={() => setPenWinner(t)}
+                          className={[
+                            "flex-1 rounded-lg px-3 py-2 text-sm transition",
+                            penWinner === t ? "bg-white text-slate-950 font-semibold" : "border border-white/15 bg-white/10 hover:bg-white/20",
+                          ].join(" ")}
+                        >
                           {t}
                         </button>
                       ))}
@@ -330,16 +391,13 @@ export default function AdminMatchesPage() {
                 )}
               </div>
 
-              {saveMsg && <p className="text-sm mb-4 text-white/70">{saveMsg}</p>}
+              {saveMsg && <p className="mb-4 text-sm text-white/70">{saveMsg}</p>}
 
-              <div className="flex items-center justify-end gap-3">
-                <button onClick={() => setEditing(null)}
-                  className="rounded-xl border border-white/20 px-4 py-2 text-sm hover:bg-white/10 transition">
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
+                <button onClick={() => setEditing(null)} className="rounded-xl border border-white/20 px-4 py-2 text-sm transition hover:bg-white/10">
                   Cancelar
                 </button>
-                <button onClick={saveResult} disabled={saving}
-                  className="rounded-xl bg-white text-slate-950 px-4 py-2 text-sm font-semibold hover:bg-white/90 disabled:opacity-50 transition">
-                  {saving ? "Guardando..." : "Guardar"}
+                <button onClick={saveResult} disabled={saving} className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-white/90 disabled:opacity-50">
                 </button>
               </div>
             </div>

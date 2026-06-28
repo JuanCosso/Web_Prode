@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 
 import type { Member, PendingMember, Match, MyPred, LivePred, StandingRow, Room, Me } from "./types";
 import { KO_STAGES, STAGE_ORDER, STAGE_LABELS, MAX_VISIBLE_MEMBERS, MAX_VISIBLE_STANDINGS, modeLabel } from "./constants";
-import { computePlayerStats } from "./stats";
+import { computePlayerStats, PLAYER_STAT_ROWS } from "./stats";
 import type { PlayerStat } from "./stats";
 import { StatsModal } from "./StatsModal";
 import { PendingModal } from "./PendingModal";
@@ -603,33 +603,19 @@ export default function RoomClient({
 
               {/* Estadísticas */}
               {playerStats.length > 0 && (() => {
-                const byEff      = [...playerStats].sort((a, b) => b.effectivenessScore - a.effectivenessScore)[0];
-                const byExact    = [...playerStats].sort((a, b) => b.exactRatio - a.exactRatio)[0];
-                const byDist     = [...playerStats].sort((a, b) => a.avgDistance - b.avgDistance)[0];
-                const byHome     = [...playerStats].sort((a, b) => b.homeEffectiveness - a.homeEffectiveness)[0];
-                const byDraw     = [...playerStats].sort((a, b) => b.drawEffectiveness - a.drawEffectiveness)[0];
-                const byAway     = [...playerStats].sort((a, b) => b.awayEffectiveness - a.awayEffectiveness)[0];
-                const byPPM      = [...playerStats].sort((a, b) => b.avgPointsPerMatch - a.avgPointsPerMatch)[0];
-                const byCoverage = [...playerStats].sort((a, b) => b.coverage - a.coverage)[0];
-                const byStreak   = [...playerStats].sort((a, b) => b.maxStreak - a.maxStreak)[0];
-                const byWorst    = [...playerStats].sort((a, b) => b.worstStreak - a.worstStreak)[0];
-                const byPenalty  = [...playerStats].sort((a, b) => b.penaltyAccuracy - a.penaltyAccuracy)[0];
-
-                const statsRows = [
-                  { label: "Efectividad general",   icon: "🎯", leader: byEff,       value: `${byEff.effectivenessScore}%`,                color: "text-violet-300" },
-                  { label: "Marcador exacto",       icon: "✅", leader: byExact,     value: `${byExact.exactRatio}%`,                      color: "text-emerald-300" },
-                  { label: "Precisión",             icon: "📐", leader: byDist,      value: `${byDist.avgDistance}`,                       color: "text-sky-300" },
-                  { label: "Factor Riesgo",         icon: "🎲", leader: byEff,       value: `${byEff.riskFactor}`,                         color: "text-red-300" },
-                  { label: "Racha de exactos",      icon: "💎", leader: byStreak,    value: `${byStreak.maxExactStreak} seguidos`,         color: "text-indigo-300" },
-                  { label: "Efectividad local",     icon: "🏠", leader: byHome,      value: `${byHome.homeEffectiveness}%`,                color: "text-orange-300" },
-                  { label: "Efectividad empates",   icon: "⚖️", leader: byDraw,      value: `${byDraw.drawEffectiveness}%`,                color: "text-zinc-300" },
-                  { label: "Efectividad visitante", icon: "✈️", leader: byAway,      value: `${byAway.awayEffectiveness}%`,                color: "text-blue-300" },
-                  { label: "Pts por partido",       icon: "📈", leader: byPPM,       value: `${byPPM.avgPointsPerMatch.toFixed(2)} pts`,   color: "text-violet-300" },
-                  { label: "Cobertura",             icon: "📋", leader: byCoverage,  value: `${byCoverage.coverage}%`,                     color: "text-teal-300" },
-                  { label: "Mejor racha",           icon: "🔥", leader: byStreak,    value: `${byStreak.maxStreak} seguidos`,              color: "text-yellow-300" },
-                  { label: "Peor racha",            icon: "🧊", leader: byWorst,     value: `${byWorst.worstStreak} sin puntuar`,          color: "text-slate-400" },
-                  { label: "Acierto en penales",    icon: "🎯", leader: byPenalty,   value: `${byPenalty.penaltyAccuracy}%`,               color: "text-cyan-300" },
-                ];
+                const statRows = PLAYER_STAT_ROWS.map((metric) => {
+                  const sorted = [...playerStats].sort((a, b) => {
+                    const av = a[metric.key] as number;
+                    const bv = b[metric.key] as number;
+                    return metric.best === "max" ? bv - av : av - bv;
+                  });
+                  const leader = sorted[0];
+                  return {
+                    ...metric,
+                    leader,
+                    value: metric.format(leader[metric.key] as number),
+                  };
+                });
 
                 return (
                   <div className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur overflow-hidden">
@@ -637,7 +623,7 @@ export default function RoomClient({
                       <div className="text-sm font-semibold">Estadísticas</div>
                     </div>
                     <div className="px-4 py-1">
-                      {statsRows.map(({ label, icon, leader, value, color }) => (
+                      {statRows.map(({ label, icon, leader, value, color }) => (
                         <div key={label} className="flex items-center justify-between gap-2 py-2.5 border-b border-white/5 last:border-0">
                           <div className="flex items-center gap-2 min-w-0">
                             <span className="text-sm shrink-0">{icon}</span>
