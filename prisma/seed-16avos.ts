@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
+  // Lista de partidos de 16avos (R32)
   const partidos16avos = [
     { homeTeam: 'Sudáfrica', awayTeam: 'Canadá', kickoffAt: new Date('2026-06-28T16:00:00-03:00'), city: 'A confirmar', matchday: 1, stage: 'R32', status: 'PENDING' },
     { homeTeam: 'Brasil', awayTeam: 'Japón', kickoffAt: new Date('2026-06-29T14:00:00-03:00'), city: 'A confirmar', matchday: 1, stage: 'R32', status: 'PENDING' },
@@ -23,11 +24,13 @@ async function main() {
   ];
 
   console.log('Iniciando carga de 16avos de final...');
+  
   for (const partido of partidos16avos) {
     await prisma.match.create({
       data: partido,
     });
   }
+  
   console.log('¡16avos cargados correctamente en la base de datos!');
 }
 
