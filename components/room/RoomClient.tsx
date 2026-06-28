@@ -61,10 +61,12 @@ export default function RoomClient({
     () => matches.filter((m) => m.homeGoals !== null && m.awayGoals !== null).length,
     [matches]
   );
-  const stagesPresent = useMemo(
-    () => STAGE_ORDER.filter((s) => matches.some((m) => m.stage === s)),
-    [matches]
-  );
+  const stagesPresent = useMemo(() => {
+  const present = STAGE_ORDER.filter((s) => matches.some((m) => m.stage === s));
+  if (!present.includes('R32')) present.push('R32'); // Fuerza la aparición
+  return present.sort((a, b) => STAGE_ORDER.indexOf(a) - STAGE_ORDER.indexOf(b));
+  }, [matches]);
+
   const [activeStage, setActiveStage] = useState(() => stagesPresent[0] ?? "R32");
   const stageMatches = useMemo(
     () => matches.filter((m) => m.stage === activeStage),

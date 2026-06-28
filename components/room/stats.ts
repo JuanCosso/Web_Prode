@@ -30,7 +30,7 @@ export function computePlayerStats(
   allPreds: Map<string, LivePred>,
   matches: Match[]
 ): PlayerStat[] {
-  const played = matches.filter((m) => m.homeGoals !== null && m.awayGoals !== null);
+  const played = matches;
 
   // Agrupamos partidos por hora de inicio para manejar los "bloques"
   const blocks = new Map<number, Match[]>();
