@@ -213,6 +213,8 @@ export default function AdminMatchesPage() {
     .filter((m) => m.stage === selectedStage)
     .sort((a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime());
 
+  const [activeStage, setActiveStage] = useState(() => stagesPresent.includes("R32") ? "R32" : stagesPresent[0] ?? "GROUP");
+
   if (loading) return (
     <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">Cargando...</div>
   );
