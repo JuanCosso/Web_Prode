@@ -46,6 +46,15 @@ export async function GET() {
       byStage[m.stage].push(m);
     }
 
+    // Mapeo de qué etapa viene antes de cada una
+    const PREV_STAGE: Record<string, string | null> = {
+      "R16": "R32",
+      "QF": "R16",
+      "SF": "QF",
+      "TPP": "SF",
+      "FINAL": "SF",
+    };
+
     // Verificar placeholders sin resolver
     const issues: Array<{
       fifaId: string;
@@ -60,30 +69,32 @@ export async function GET() {
 
       // Si hay placeholder pero la etapa anterior está completa, es problema
       if (isPlaceholder(m.homeTeam)) {
-        const prevStageMatches = byStage[m.stage] || [];
-        const allCompleted = prevStageMatches.every(
+        const prevStage = PREV_STAGE[m.stage];
+        const prevStageMatches = prevStage ? byStage[prevStage] : [];
+        const allCompleted = prevStageMatches.length > 0 && prevStageMatches.every(
           (p) => p.homeGoals !== null && p.awayGoals !== null
         );
         if (allCompleted) {
           issues.push({
             fifaId: m.fifaId || "???",
             stage: m.stage,
-            problem: `homeTeam aún es placeholder: "${m.homeTeam}" pero etapa anterior completa`,
+            problem: `homeTeam aún es placeholder: "${m.homeTeam}" pero ${prevStage} completado`,
             match: m,
           });
         }
       }
 
       if (isPlaceholder(m.awayTeam)) {
-        const prevStageMatches = byStage[m.stage] || [];
-        const allCompleted = prevStageMatches.every(
+        const prevStage = PREV_STAGE[m.stage];
+        const prevStageMatches = prevStage ? byStage[prevStage] : [];
+        const allCompleted = prevStageMatches.length > 0 && prevStageMatches.every(
           (p) => p.homeGoals !== null && p.awayGoals !== null
         );
         if (allCompleted) {
           issues.push({
             fifaId: m.fifaId || "???",
             stage: m.stage,
-            problem: `awayTeam aún es placeholder: "${m.awayTeam}" pero etapa anterior completa`,
+            problem: `awayTeam aún es placeholder: "${m.awayTeam}" pero ${prevStage} completado`,
             match: m,
           });
         }

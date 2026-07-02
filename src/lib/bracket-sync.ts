@@ -1,15 +1,16 @@
 import { prisma } from "@/src/lib/prisma";
 
 type Match = {
-  id: string;
-  fifaId: string | null;
+  id?: string;
+  fifaId?: string | null;
   stage: string;
-  homeTeam: string;
-  awayTeam: string;
+  homeTeam?: string;
+  awayTeam?: string;
   homeGoals: number | null;
   awayGoals: number | null;
-  decidedByPenalties: boolean;
-  penWinner: string | null;
+  decidedByPenalties?: boolean;
+  penWinner?: string | null;
+  kickoffAt: Date | string;
 };
 
 function isPlaceholder(value: string | null | undefined): boolean {

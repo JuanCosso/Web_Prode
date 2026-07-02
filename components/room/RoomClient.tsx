@@ -68,7 +68,13 @@ export default function RoomClient({
 }, [matches]);
 
   const [activeStage, setActiveStage] = useState(() => {
-    const nextKO = getNextActiveStage(matches as any);
+    const matchesForKOCheck = matches.map((m) => ({
+      stage: m.stage,
+      homeGoals: m.homeGoals,
+      awayGoals: m.awayGoals,
+      kickoffAt: m.kickoffAt,
+    }));
+    const nextKO = getNextActiveStage(matchesForKOCheck);
     if (nextKO) return nextKO;
     return stagesPresent[0] ?? "GROUP";
   });
