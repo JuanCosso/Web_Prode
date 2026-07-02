@@ -67,6 +67,12 @@ export default function AdminMatchesPage() {
   const [randomizing, setRandomizing] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [bulkMsg, setBulkMsg] = useState("");
+  const [initializingBracket, setInitializingBracket] = useState(false);
+  const [bracketMsg, setBracketMsg] = useState("");
+  
+  const [showDebug, setShowDebug] = useState(false);
+  const [debugData, setDebugData] = useState<any>(null);
+  const [debugLoading, setDebugLoading] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/matches")
@@ -174,6 +180,32 @@ export default function AdminMatchesPage() {
     setBulkMsg(`🗑️ ${data.updated}/${withResults.length} resultados eliminados`);
   }
 
+  async function initializeKnockoutBracket() {
+    if (!confirm("¿Crear la estructura de eliminatorias?")) return;
+    setInitializingBracket(true);
+    setBracketMsg("");
+
+    const res = await fetch("/api/admin/knockout/init", { method: "POST" });
+    const data = await res.json().catch(() => ({}));
+    setInitializingBracket(false);
+
+    if (!res.ok) {
+      setBracketMsg(`❌ Error: ${data.error ?? "desconocido"}`);
+      return;
+    }
+
+    setBracketMsg(`✅ ${data.count ?? 0} partidos de eliminatorias creados`);
+    window.location.reload();
+  }
+
+  async function loadDebugInfo() {
+    setDebugLoading(true);
+    const res = await fetch("/api/admin/bracket-debug");
+    const data = await res.json().catch(() => null);
+    setDebugData(data);
+    setDebugLoading(false);
+  }
+
   async function transferPredictions() {
     setTransferMsg("");
     setTransfering(true);
@@ -250,6 +282,12 @@ export default function AdminMatchesPage() {
             >
               {clearing ? "Borrando..." : "🗑️ Borrar resultados"}
             </button>
+            <button
+              onClick={() => { if (!showDebug) loadDebugInfo(); setShowDebug(!showDebug); }}
+              className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs font-medium text-blue-400 transition hover:bg-blue-500/20"
+            >
+              {showDebug ? "✕ Cerrar debug" : "🔍 Ver estructura KO"}
+            </button>
           </div>
         </div>
 
@@ -298,6 +336,53 @@ export default function AdminMatchesPage() {
         </div>
 
         {bulkMsg && <p className="mb-4 mt-1 text-xs text-white/60">{bulkMsg}</p>}
+
+        <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-sm font-semibold">Estructura de eliminatorias</h2>
+              <p className="mt-1 text-xs text-white/60">Crea los 16avos, octavos, cuartos, semifinales y final. Se rellenarán automáticamente conforme se resuelvan los partidos.</p>
+            </div>
+            <button
+              onClick={initializeKnockoutBracket}
+              disabled={initializingBracket}
+              className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-slate-950 transition hover:bg-white/90 disabled:opacity-50"
+            >
+              {initializingBracket ? "Creando..." : "Crear eliminatorias"}
+            </button>
+          </div>
+          {bracketMsg && <p className="mt-3 text-xs text-white/70">{bracketMsg}</p>}
+        </div>
+
+        {showDebug && (
+          <div className="mb-4 rounded-2xl border border-blue-500/30 bg-blue-500/5 p-4">
+            <h3 className="mb-3 text-sm font-semibold text-blue-300">📊 Debug: Estructura de Brackets</h3>
+            {debugLoading ? (
+              <p className="text-xs text-white/60">Cargando...</p>
+            ) : debugData?.issues && debugData.issues.length > 0 ? (
+              <div className="space-y-2">
+                <p className="mb-3 text-xs text-orange-400">⚠️ Se detectaron {debugData.issues.length} problemas:</p>
+                {debugData.issues.map((issue: any, i: number) => (
+                  <div key={i} className="rounded-lg bg-white/5 p-2 text-[11px] text-white/70">
+                    <span className="font-semibold text-orange-300">{issue.fifaId} ({issue.stage})</span>: {issue.problem}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-green-400">✅ No hay problemas detectados</p>
+            )}
+            {debugData?.stats && (
+              <div className="mt-3 grid gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-6">
+                {debugData.stats.map((s: any) => (
+                  <div key={s.stage} className="rounded-lg bg-white/10 p-2 text-center">
+                    <div className="text-[11px] font-semibold text-white/50">{STAGE_LABELS[s.stage] ?? s.stage}</div>
+                    <div className="mt-1 text-sm font-bold text-white">{s.played}/{s.total}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="mb-5 flex flex-wrap gap-2">
           {stagesPresent.map((s) => (

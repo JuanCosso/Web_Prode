@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getNextActiveStage } from "@/src/lib/bracket-sync";
 
 import type { Member, PendingMember, Match, MyPred, LivePred, StandingRow, Room, Me } from "./types";
 import { KO_STAGES, STAGE_ORDER, STAGE_LABELS, MAX_VISIBLE_MEMBERS, MAX_VISIBLE_STANDINGS, modeLabel } from "./constants";
@@ -63,11 +64,14 @@ export default function RoomClient({
   );
   const stagesPresent = useMemo(() => {
   const allStages = Array.from(new Set(matches.map((m) => m.stage)));
-  // ESTO ES CLAVE: Filtra asegurando que "R32" no sea excluido
   return STAGE_ORDER.filter(s => allStages.includes(s));
 }, [matches]);
 
-  const [activeStage, setActiveStage] = useState(() => stagesPresent[0] ?? "GROUP");
+  const [activeStage, setActiveStage] = useState(() => {
+    const nextKO = getNextActiveStage(matches as any);
+    if (nextKO) return nextKO;
+    return stagesPresent[0] ?? "GROUP";
+  });
   const stageMatches = useMemo(
     () => matches.filter((m) => m.stage === activeStage),
     [matches, activeStage]

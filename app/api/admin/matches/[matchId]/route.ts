@@ -12,6 +12,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
 import { getCurrentUser } from "@/src/lib/auth-user";
+import { syncMatchProgression } from "@/src/lib/bracket-sync";
 
 function isAdmin(email: string | null | undefined): boolean {
   if (!email) return false;
@@ -121,6 +122,11 @@ export async function PATCH(
       kickoffAt: true,
     },
   });
+
+  // Auto-sync bracket progression if it's a knockout match with a result
+  if (updated.fifaId && updated.stage !== "GROUP" && (updated.homeGoals !== null && updated.awayGoals !== null)) {
+    await syncMatchProgression(updated);
+  }
 
   return NextResponse.json({ ok: true, match: updated });
 }
