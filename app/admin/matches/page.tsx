@@ -54,6 +54,8 @@ export default function AdminMatchesPage() {
   const [penWinner, setPenWinner] = useState("");
   const [newHomeTeam, setNewHomeTeam] = useState("");
   const [newAwayTeam, setNewAwayTeam] = useState("");
+  const [newKickoffAt, setNewKickoffAt] = useState("");
+  const [newCity, setNewCity] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
 
@@ -90,6 +92,15 @@ export default function AdminMatchesPage() {
     setPenWinner(m.penWinner ?? "");
     setNewHomeTeam(m.homeTeam);
     setNewAwayTeam(m.awayTeam);
+    // Convertir ISO a formato datetime-local para el input
+    const d = new Date(m.kickoffAt);
+    const yyyy = d.getUTCFullYear();
+    const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(d.getUTCDate()).padStart(2, "0");
+    const hh = String(d.getUTCHours()).padStart(2, "0");
+    const min = String(d.getUTCMinutes()).padStart(2, "0");
+    setNewKickoffAt(`${yyyy}-${mm}-${dd}T${hh}:${min}`);
+    setNewCity(m.city);
     setSaveMsg("");
   }
 
@@ -112,12 +123,34 @@ export default function AdminMatchesPage() {
       body: JSON.stringify(body),
     });
     const data = await res.json();
-    setSaving(false);
 
-    if (!res.ok) { setSaveMsg(`❌ Error: ${data.error ?? "desconocido"}`); return; }
+    if (!res.ok) { setSaving(false); setSaveMsg(`❌ Error: ${data.error ?? "desconocido"}`); return; }
+
+    // También guardar cambios de fecha/ciudad si se modificaron
+    if (newKickoffAt || newCity !== editing.city) {
+      const scheduleRes = await fetch("/api/admin/matches/update-schedule", {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          matchId: editing.id,
+          kickoffAt: newKickoffAt ? new Date(newKickoffAt).toISOString() : undefined,
+          city: newCity !== editing.city ? newCity : undefined,
+        }),
+      });
+      const scheduleData = await scheduleRes.json();
+      if (scheduleRes.ok && scheduleData.match) {
+        setMatches((prev) => prev.map((m) => m.id === scheduleData.match.id 
+          ? { ...m, kickoffAt: scheduleData.match.kickoffAt, city: scheduleData.match.city } 
+          : m
+        ));
+      }
+    }
+
+    setSaving(false);
     setSaveMsg("✅ Guardado");
     setMatches((prev) => prev.map((m) => m.id === data.match.id ? { ...m, ...data.match } : m));
     setEditing(null);
+    setNewKickoffAt("");
+    setNewCity("");
   }
 
   // ── Bulk: random de grupos ────────────────────────────────────────────────
@@ -497,6 +530,26 @@ export default function AdminMatchesPage() {
               <p className="mb-4 text-xs text-white/40">{editing.fifaId} · {editing.city}</p>
 
               <div className="mb-4">
+                <label className="mb-2 block text-xs text-white/60">Fecha y hora (UTC)</label>
+                <input
+                  type="datetime-local"
+                  value={newKickoffAt}
+                  onChange={(e) => setNewKickoffAt(e.target.value)}
+                  className="w-full rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm outline-none focus:border-white/30"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="mb-2 block text-xs text-white/60">Ciudad (opcional)</label>
+                <input
+                  value={newCity}
+                  onChange={(e) => setNewCity(e.target.value)}
+                  className="w-full rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm outline-none focus:border-white/30"
+                  placeholder="Ciudad del partido"
+                />
+              </div>
+
+              <div className="mb-4">
                 <label className="mb-2 block text-xs text-white/60">Equipos (opcional)</label>
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <input
@@ -568,7 +621,7 @@ export default function AdminMatchesPage() {
               {saveMsg && <p className="mb-4 text-sm text-white/70">{saveMsg}</p>}
 
               <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
-                <button onClick={() => setEditing(null)} className="rounded-xl border border-white/20 px-4 py-2 text-sm transition hover:bg-white/10">
+                <button onClick={() => { setEditing(null); setNewKickoffAt(""); setNewCity(""); }} className="rounded-xl border border-white/20 px-4 py-2 text-sm transition hover:bg-white/10">
                   Cancelar
                 </button>
                 <button onClick={saveResult} disabled={saving} className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-white/90 disabled:opacity-50">
