@@ -226,7 +226,7 @@ export const MatchTable = React.memo(function MatchTable({
                                 />
                               </div>
                               {isKO && d.pen && (
-                                <span className="max-w-[88px] truncate rounded-full border border-amber-400/25 bg-amber-400/10 px-1.5 py-px text-[10px] font-medium text-amber-200">
+                                <span className="text-[10px] text-white/50">
                                   {d.pen}
                                 </span>
                               )}
