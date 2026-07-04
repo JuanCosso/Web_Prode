@@ -113,10 +113,15 @@ export default function AdminMatchesPage() {
       homeTeam: newHomeTeam.trim() || undefined,
       awayTeam: newAwayTeam.trim() || undefined,
     };
-    if (homeGoals !== "") body.homeGoals = parseInt(homeGoals, 10);
-    if (awayGoals !== "") body.awayGoals = parseInt(awayGoals, 10);
-    body.decidedByPenalties = penalties;
-    body.penWinner = penalties ? penWinner.trim() : null;
+    body.homeGoals = homeGoals !== "" ? parseInt(homeGoals, 10) : null;
+    body.awayGoals = awayGoals !== "" ? parseInt(awayGoals, 10) : null;
+    if (body.homeGoals === null || body.awayGoals === null) {
+      body.decidedByPenalties = false;
+      body.penWinner = null;
+    } else {
+      body.decidedByPenalties = penalties;
+      body.penWinner = penalties ? penWinner.trim() : null;
+    }
 
     const res = await fetch(`/api/admin/matches/${editing.id}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
